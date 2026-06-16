@@ -116,9 +116,11 @@ async function main() {
 
     process.on("uncaughtException", (err) => {
         log("error", "uncaughtException", { message: err && err.message, stack: err && err.stack });
+        process.exit(1);
     });
     process.on("unhandledRejection", (reason) => {
         log("error", "unhandledRejection", { reason: String(reason) });
+        process.exit(1);
     });
 
     const transport = new StdioServerTransport();
