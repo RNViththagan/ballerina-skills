@@ -34,7 +34,10 @@ function applyPrefixToTypeName(typeName, externalLinks) {
     let result = typeName;
     for (const link of externalLinks) {
         const regex = new RegExp(`\\b${escapeRegExp(link.recordName)}\\b`, "g");
-        result = result.replace(regex, `${link.modulePrefix}:${link.recordName}`);
+        result = result.replace(regex, (match, offset, source) => {
+            const prev = offset > 0 ? source[offset - 1] : "";
+            return prev === ":" ? match : `${link.modulePrefix}:${match}`;
+        });
     }
     return result;
 }
@@ -128,6 +131,12 @@ function renderClass(typeDef) {
     return `${desc}${dep}class ${typeDef.name} {\n}`;
 }
 
+function renderError(typeDef) {
+    const desc = renderDescription(typeDef.description);
+    const dep = renderDeprecation(typeDef.isDeprecated);
+    return `${desc}${dep}type ${typeDef.name} error;`;
+}
+
 function renderTypeDef(typeDef) {
     switch (typeDef.type) {
         case "Record":
@@ -140,6 +149,8 @@ function renderTypeDef(typeDef) {
             return renderConstant(typeDef);
         case "Class":
             return renderClass(typeDef);
+        case "Error":
+            return renderError(typeDef);
         default:
             return `// Unknown type: ${typeDef.name}`;
     }
