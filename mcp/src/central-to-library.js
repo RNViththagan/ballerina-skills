@@ -373,11 +373,13 @@ function centralDocsToLibrary(centralApiResponse) {
     }
 
     for (const u of mod.unionTypes || []) {
-        typeDefs.push({ type: "Union", name: u.name, description: (u.description || "").trim(), members: [] });
+        const members = (u.memberTypes || []).map((m) => ({ name: transformCentralType(m, modId, orgName).name }));
+        typeDefs.push({ type: "Union", name: u.name, description: (u.description || "").trim(), members });
     }
 
     for (const i of mod.intersectionTypes || []) {
-        typeDefs.push({ type: "IntersectionType", name: i.name, description: (i.description || "").trim(), members: [] });
+        const members = (i.memberTypes || []).map((m) => ({ name: transformCentralType(m, modId, orgName).name }));
+        typeDefs.push({ type: "IntersectionType", name: i.name, description: (i.description || "").trim(), members });
     }
 
     for (const s of mod.simpleNameReferenceTypes || []) {
