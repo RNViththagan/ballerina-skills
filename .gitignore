@@ -22,3 +22,9 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# OS generated files
+.DS_Store
+
+# Node dependencies (MCP server builds self-contained into mcp/dist/)
+node_modules/
