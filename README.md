@@ -11,7 +11,7 @@ Agent skills & plugins for Ballerina developers — language-server code intelli
 
 ### via Claude Code
 
-```
+```bash
 /plugin marketplace add ballerina-platform/skills
 /plugin install ballerina@ballerina-skills
 ```
@@ -52,7 +52,7 @@ file or ask the agent to "write a Ballerina HTTP service".
 
 Or invoke it directly:
 
-```
+```bash
 /ballerina <your request>
 ```
 
