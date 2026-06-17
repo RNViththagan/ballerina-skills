@@ -22,7 +22,7 @@ bal build                # confirm baseline compiles before writing code
 
 ## Writing Ballerina Code
 
-**Step 1 — Read existing code**: Read `.bal` files and `Ballerina.toml` to understand the project structure. Prefer modifying existing files over creating new ones.
+**Step 1 — Read existing code and plan file layout**: Read `.bal` files and `Ballerina.toml` to understand the project and its existing layout. Place new code in the file that fits its concern rather than everything in `main.bal` (see [code-rules.md](code-rules.md) for file organization).
 
 **Step 2 — Discover libraries if needed**: If the task requires an external connector or library you don't know, invoke the `library` agent. It will search, fetch, and return a compact API summary. Then add the `import` statement to your `.bal` file — Ballerina auto-resolves dependencies from Central when you run `bal build`.
 - The library agent uses the bundled `ballerina-library` MCP server (no extra install). If its tools error as "not found", ensure the `ballerina` plugin is enabled and the session has been restarted.

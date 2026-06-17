@@ -78,9 +78,10 @@ When working with a Ballerina workspace (root `Ballerina.toml` with a `[workspac
 - Providing values to configurables is a runtime task. Only do it before running or testing.
 - If the user needs to supply values, list the configurable variable names in the summary.
 
-## File Management
+## File Organization
 
-- Prefer modifying existing `.bal` files over creating new ones unless explicitly asked.
+- Split code by concern across multiple `.bal` files rather than cramming everything into `main.bal` — files in a package share one module, so splitting is free; use submodules or packages for larger separation.
+- Reuse a fitting existing file before adding a new one; name new files for their concern (`snake_case.bal`). Naming and granularity are your call, not a fixed scheme.
 - Do not create documentation markdown files.
 - **Never hand-edit `Dependencies.toml`** — it is auto-managed by the build tool. Do not create or hand-modify it to manage dependencies; deleting it to force a clean re-resolution (then rebuilding) is a valid troubleshooting step.
 - **Never edit `Ballerina.toml` to add dependencies** — add the `import` statement in the `.bal` file and run `bal build`; Ballerina resolves and downloads packages from Central automatically.
