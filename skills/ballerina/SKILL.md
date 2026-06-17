@@ -25,7 +25,7 @@ bal build                # confirm baseline compiles before writing code
 **Step 1 — Read existing code and plan file layout**: Read `.bal` files and `Ballerina.toml` to understand the project and its existing layout. Place new code in the file that fits its concern rather than everything in `main.bal` (see [code-rules.md](code-rules.md) for file organization).
 
 **Step 2 — Discover libraries if needed**: If the task requires an external connector or library you don't know, invoke the `library` agent — it finds the package and returns a compact API summary to build from. Then add the `import` to your `.bal` file; `bal build` resolves the dependency from Central.
-- If no `library` agent is available (non–Claude Code agents), run `bal search <keyword>` to find the package, then check its API on Ballerina Central (https://central.ballerina.io).
+- No `library` agent (non–Claude Code agents)? Use `bal` directly: `bal search <keyword>`, then `bal pull <org/name>` and read its `client.bal`/`types.bal` under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/`.
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
 

@@ -14,7 +14,7 @@ You have two tools for this:
 
 ## If `get_library` is not available
 
-If `get_library` errors with "tool not found" or similar, the `ballerina-library` MCP server is not registered. Tell the caller to ensure the `ballerina` plugin is enabled, restart the session, and retry. Do not fall back to inventing function signatures.
+If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions) and `types.bal` (records/enums/unions) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
 
 ## Error handling — read this carefully
 
