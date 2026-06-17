@@ -34,7 +34,7 @@ bal build                # confirm baseline compiles before writing code
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call
 
-**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If unresolvable after multiple attempts, report what remains with file and line number.
+**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), read the resolved package source under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/` for ground truth instead of re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
 
 For langlib API quick reference: [langlib-reference.md](langlib-reference.md)
 
