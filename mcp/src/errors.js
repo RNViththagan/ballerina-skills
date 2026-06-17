@@ -60,7 +60,7 @@ class PackageNotFoundError extends BalMcpError {
             `Package ${qualifiedName} not found on Ballerina Central.`,
             {
                 retryable: false,
-                suggestion: opts.suggestion || "Use search_libraries to find the correct org/name.",
+                suggestion: opts.suggestion || "Use the `bal search` command to find the correct org/name.",
                 details: { qualifiedName, ...(opts.details || {}) },
                 ...opts,
             }
@@ -90,36 +90,6 @@ class TimeoutError extends BalMcpError {
             ...opts,
         });
         this.name = "TimeoutError";
-    }
-}
-
-class BalNotInstalledError extends BalMcpError {
-    constructor(opts = {}) {
-        super(
-            "BAL_NOT_INSTALLED",
-            "The `bal` command is not on PATH. Ballerina is required for library search.",
-            {
-                retryable: false,
-                suggestion: opts.suggestion || "Install Ballerina (https://ballerina.io/downloads) and ensure `bal` is on PATH.",
-                ...opts,
-            }
-        );
-        this.name = "BalNotInstalledError";
-    }
-}
-
-class BalCommandError extends BalMcpError {
-    constructor(message, opts = {}) {
-        const { stderr, exitCode, details, ...rest } = opts || {};
-        super("BAL_COMMAND_FAILED", message, {
-            retryable: false,
-            details: { ...(details || {}), ...(stderr !== undefined ? { stderr } : {}), ...(exitCode !== undefined ? { exitCode } : {}) },
-            ...rest,
-        });
-        // The super's details merge may have been clobbered by spread ordering; assert explicitly.
-        if (stderr !== undefined) this.details.stderr = stderr;
-        if (exitCode !== undefined) this.details.exitCode = exitCode;
-        this.name = "BalCommandError";
     }
 }
 
@@ -178,8 +148,6 @@ module.exports = {
     PackageNotFoundError,
     UpstreamError,
     TimeoutError,
-    BalNotInstalledError,
-    BalCommandError,
     CancelledError,
     InternalError,
     formatErrorResult,

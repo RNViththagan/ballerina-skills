@@ -32,17 +32,6 @@ function asTextResult(text) {
     return { content: [{ type: "text", text }] };
 }
 
-function formatSearchRows(rows) {
-    if (rows.length === 0) {
-        return "No packages found.";
-    }
-    const lines = ["NAME\tVERSION\tDESCRIPTION"];
-    for (const row of rows) {
-        lines.push(`${row.name}\t${row.version}\t${row.description}`);
-    }
-    return lines.join("\n");
-}
-
 function parseQualifiedName(name) {
     const m = /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/.exec((name || "").trim());
     if (!m) {
@@ -79,20 +68,6 @@ function wrapTool(handler) {
     };
 }
 
-async function searchLibrariesTool(args, extra = {}, deps = {}) {
-    const query = args && args.query;
-    if (!query) {
-        throw new ValidationError("'query' is required.", {
-            suggestion: "Pass a non-empty 'query' string, e.g. { query: 'gmail' }.",
-        });
-    }
-    const rows = await centralClient.searchPackages(query, {
-        signal: extra && extra.signal,
-        execFile: deps.execFile,
-    });
-    return asTextResult(formatSearchRows(rows));
-}
-
 async function getLibraryTool(args, extra = {}, deps = {}) {
     const rawName = args && args.name;
     if (!rawName) {
@@ -118,8 +93,6 @@ async function getLibraryTool(args, extra = {}, deps = {}) {
 
 module.exports = {
     wrapTool,
-    searchLibrariesTool,
     getLibraryTool,
     parseQualifiedName,
-    formatSearchRows,
 };

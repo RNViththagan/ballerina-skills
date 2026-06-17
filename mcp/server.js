@@ -26,7 +26,6 @@ const { z } = require("zod");
 
 const {
     wrapTool,
-    searchLibrariesTool,
     getLibraryTool,
 } = require("./src/tools.js");
 
@@ -94,20 +93,6 @@ async function main() {
         name: SERVER_NAME,
         version: SERVER_VERSION,
     });
-
-    server.registerTool(
-        "search_libraries",
-        {
-            title: "Search Ballerina Central libraries",
-            description:
-                "Search Ballerina Central for packages matching a keyword. Returns a tab-separated table of name, version, and description. Use this first to discover the correct org/name for a library, then call get_library. " +
-                "Errors are returned as { isError: true, content: [{ type: 'text', text: '<JSON>' }] } — see the agent's 'Error handling' docs for the JSON shape.",
-            inputSchema: {
-                query: z.string().describe("Search keyword(s), e.g. 'gmail', 'stripe payment', 'mysql database'"),
-            },
-        },
-        instrumentTool("search_libraries", wrapTool(searchLibrariesTool))
-    );
 
     server.registerTool(
         "get_library",
