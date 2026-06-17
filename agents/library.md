@@ -65,6 +65,8 @@ Rules:
 
 From the search results, select the minimal set of libraries that can fulfill the user's request (typically 1–3 libraries). Use the name and description to decide. Prefer `ballerinax/*` for external service connectors, `ballerina/*` for standard/core libraries.
 
+When two packages overlap (e.g. an older `trigger.*` listener vs a connector that ships its own listener), prefer the actively-maintained / latest one — usually the connector. Don't blend a superseded package's API into the current one; that mismatch is a common cause of code that won't compile.
+
 **Step 3 — Get full API**
 
 For each selected library, call `get_library({ name: "<org/name>" })`.
