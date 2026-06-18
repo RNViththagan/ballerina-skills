@@ -65,7 +65,7 @@ Then commit to the best-matching `ballerinax/*` / `ballerina/*` row — do **not
 
 From the search results, select the minimal set of libraries that can fulfill the user's request (typically 1–3 libraries). Use the name and description to decide. Prefer `ballerinax/*` for external service connectors, `ballerina/*` for standard/core libraries.
 
-When a `trigger.*` listener package and a connector that ships its own listener both cover the same events (e.g. `ballerinax/trigger.salesforce` vs `ballerinax/salesforce`), prefer the connector and avoid the `trigger.*` package — it is usually the older, less-maintained option (compare the `bal search` dates and versions to confirm). Don't blend a superseded package's API into the current one; that mismatch is a common cause of code that won't compile.
+When a `trigger.*` listener package and a connector that ships its own listener both cover the same events (e.g. `ballerinax/trigger.<x>` vs `ballerinax/<x>`), prefer the connector and avoid the `trigger.*` package — it is usually the older, less-maintained option (compare the `bal search` dates and versions to confirm). Don't blend a superseded package's API into the current one; that mismatch is a common cause of code that won't compile.
 
 **Step 3 — Get full API**
 
