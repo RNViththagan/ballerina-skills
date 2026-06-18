@@ -11,6 +11,7 @@
 ## Data
 
 - Use records for all data structures. Never use `map<json>`, `map<anydata>`, or raw `json`.
+- Prefer closed records (`record {| ... |}`) for data shapes you own. Use an open record only when tolerating extra/unknown fields is deliberate (e.g. a loosely-specified inbound payload).
 - Never access or manipulate a `json` variable directly. Define a record, convert json to it (`cloneWithType()` or `fromJsonStringWithType()`), then use the record.
 - If a return typedesc is marked `<>` in API docs, define a custom record for the expected data shape.
 - If a parameter type is `record {|anydata...;|}`, define or reuse an explicit named record — do not pass an anonymous literal.
@@ -91,9 +92,14 @@ When working with a Ballerina workspace (root `Ballerina.toml` with a `[workspac
 - Only write tests if the user explicitly asks.
 - Use the `ballerina/test` module and any service-specific test libraries.
 - Follow the `instructions` field in `ballerina/test` library docs and the `testGenerationInstruction` field in the service library's API docs when writing tests.
+- Test an HTTP service through an `http:Client` against the running service — assert its public contract, not internals.
+- Override `configurable` values for tests in `tests/Config.toml` (not the package's `Config.toml`).
+- To mock a client or connector, wrap its construction in a small init function so `@test:Mock` can replace it.
+- Use `dependsOn` only when test ordering is the behavior under test — not to sequence otherwise-independent tests.
 
 ## Other Rules
 
 - No dynamic listener registrations.
 - No code that requires assigning values to function parameters.
+- Propagate errors with `check`, or handle them with a `do`/`on fail` block; never use `checkpanic` to silence an error return in real code.
 - `//` for single-line comments only. Keep comments minimal.
