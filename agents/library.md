@@ -35,17 +35,18 @@ Parse it and branch on the `error` code:
 
 | `error` code | What it means | Your reaction |
 |---|---|---|
-| `VALIDATION` | Args malformed (most often `name` has a `:version` suffix, or is missing). | Read `message` + `suggestion`, fix the call, retry **once**, then surface. |
+| `VALIDATION` | Args malformed (most often `name` has a `:version` suffix, or is missing). | Read `message` + `suggestion`, **fix the `name` and re-issue once** (a corrected call, not a blind retry), then surface. |
 | `PACKAGE_NOT_FOUND` | The exact `org/name` is not on Central. | Surface with `details.qualifiedName`; suggest verifying the name or searching with different keywords. Do **not** loop. |
 | `UPSTREAM_ERROR` | Central returned non-OK / network failed (already retried by the server). | Stop. Surface as "Ballerina Central appears unreachable right now; please retry shortly." |
-| `TIMEOUT` | Call to Central exceeded its budget (already retried). | Surface, don't loop. For a known-large package, retry **once** with an explicit `version` to skip the registry lookup. |
+| `TIMEOUT` | Call to Central exceeded its budget (already retried). | Surface, don't loop. For a known-large package, issue **one** follow-up call with an explicit `version` to skip the registry lookup. |
 | `CANCELLED` | The MCP host cancelled the request. | Stop. |
 | `INTERNAL_ERROR` | Server-side bug. | Surface the `message` and stop — not the user's fault. |
 
 **General rules:**
-- Never retry on `VALIDATION`, `PACKAGE_NOT_FOUND`, `CANCELLED`, or `INTERNAL_ERROR`.
-- The server already retries `UPSTREAM_ERROR` and `TIMEOUT` 3× with backoff — do not add a second retry layer.
-- If `retryable` is `false`, never retry.
+- Never blindly resend the *same* call. The only allowed re-issues are the two *corrected/different* calls noted above: a `VALIDATION` re-issue **after fixing the `name`**, and a single `TIMEOUT` follow-up **with an explicit `version`**.
+- `PACKAGE_NOT_FOUND`, `CANCELLED`, and `INTERNAL_ERROR` are terminal — never re-issue them.
+- The server already retries `UPSTREAM_ERROR` and `TIMEOUT` 3× with backoff — never add your own retry loop.
+- When `retryable` is `false`, never resend the same call.
 
 ## Workflow
 
