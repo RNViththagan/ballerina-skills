@@ -16,6 +16,8 @@ You have two tools for this:
 
 If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions) and `types.bal` (records/enums/unions) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
 
+Reading `.bala` source is a **fallback only** — for when `get_library` is unavailable (above) or returns an error. When `get_library` works, its output is authoritative and complete (clients, types, services, listeners, annotations); **do not** proactively `bal pull` or read `.bala` files to double-check or supplement it. That second pass only adds latency.
+
 ## Error handling — read this carefully
 
 **`bal search` (Bash) errors** are plain CLI output:
