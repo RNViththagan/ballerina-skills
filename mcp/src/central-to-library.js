@@ -360,7 +360,12 @@ function buildServices(mod, modId, orgName) {
         name: svc.name,
         isDeprecated: svc.isDeprecated || false,
         listener: { name: `${modId}:${lsn.name}`, parameters: listenerParams },
-        methods: (svc.methods || []).map((m) => buildServiceMethod(m, modId, orgName)),
+        // The service template renders methods as `remote function <name>(...)`. Resource
+        // functions have no name (only accessor/path), so drop them rather than emit a
+        // broken `remote function undefined(...)` — listener service types are remote-method based.
+        methods: (svc.methods || [])
+            .map((m) => buildServiceMethod(m, modId, orgName))
+            .filter((m) => m.name),
     }));
 }
 
