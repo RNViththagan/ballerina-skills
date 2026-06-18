@@ -22,11 +22,11 @@ bal build                # confirm baseline compiles before writing code
 
 ## Writing Ballerina Code
 
-**Step 1 — Read existing code**: Read `.bal` files and `Ballerina.toml` to understand the project structure. Prefer modifying existing files over creating new ones.
+**Step 1 — Read existing code and plan file layout**: Read `.bal` files and `Ballerina.toml` to understand the project and its existing layout. Place new code in the file that fits its concern rather than everything in `main.bal` (see [code-rules.md](code-rules.md) for file organization).
 
-**Step 2 — Discover libraries if needed**: If the task requires an external connector or library you don't know, invoke the `library` agent. It will search, fetch, and return a compact API summary. Then add the `import` statement to your `.bal` file — Ballerina auto-resolves dependencies from Central when you run `bal build`.
-- The library agent uses the bundled `ballerina-library` MCP server (no extra install). If its tools error as "not found", ensure the `ballerina` plugin is enabled and the session has been restarted.
-- **If the MCP server is not available**, use the `bal search <keyword>` command to find packages and fetch their API details directly from Ballerina Central (https://central.ballerina.io) before adding the `import`.
+**Step 2 — Discover libraries if needed**: If the task needs an external connector or library you don't know, invoke the `library` agent — give it the full task (including auth and trigger/event details) so its first summary already covers the client or `listener` constructor and the auth/connection config you'll need. Add the returned `import` to your `.bal` file; `bal build` resolves the dependency from Central. Trust the summary's API shapes — don't `bal pull` or read package source to double-check them (that only adds latency); if a detail is genuinely missing, ask the `library` agent rather than guessing. Trusting it doesn't mean importing every package it names — import only what your code actually references.
+- When both a `ballerinax/*` connector (with its own listener) and a standalone `trigger.*` package cover the same events, always prefer the connector — `trigger.*` packages are being superseded (don't judge by modified date).
+- No `library` agent (non–Claude Code agents)? Use `bal` directly: `bal search <keyword>`, then `bal pull <org/name>` and read its `client.bal`/`types.bal` under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/`.
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
 
@@ -35,7 +35,7 @@ bal build                # confirm baseline compiles before writing code
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call
 
-**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If unresolvable after multiple attempts, report what remains with file and line number.
+**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), re-consult the `library` agent's API summary — or ask it for the specific detail you're missing — rather than re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
 
 For langlib API quick reference: [langlib-reference.md](langlib-reference.md)
 

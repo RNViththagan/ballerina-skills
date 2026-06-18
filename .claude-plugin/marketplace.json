@@ -2,17 +2,18 @@
   "name": "ballerina-skills",
   "owner": {
     "name": "WSO2",
-    "email": ""
+    "url": "https://github.com/ballerina-platform"
   },
   "metadata": {
-    "description": "Agent skills & plugins for Ballerina developers",
-    "version": "0.1.0"
+    "description": "Agent skills & plugins for Ballerina developers"
   },
   "plugins": [
     {
       "name": "ballerina",
+      "source": "./",
       "description": "Ballerina language support — LSP code intelligence for .bal files plus an AI coding assistant for writing integrations and services, discovering libraries from Ballerina Central, and running and testing projects.",
-      "source": "./"
+      "category": "development",
+      "tags": ["wso2", "ballerina"]
     }
   ]
 }

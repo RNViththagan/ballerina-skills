@@ -319,6 +319,84 @@ function transformRecordFields(fields, modId, orgName) {
 }
 
 // ---------------------------------------------------------------------------
+// Listener-based services
+// ---------------------------------------------------------------------------
+
+function buildServiceMethod(method, modId, orgName) {
+    const tm = transformMethod(method, modId, orgName);
+    return {
+        name: tm.name,
+        description: tm.description,
+        isDeprecated: method.isDeprecated || false,
+        parameters: tm.parameters.map((p) => ({ type: { name: p.type.name }, name: p.name })),
+        return: tm.return,
+        optional: false,
+    };
+}
+
+// Pairs each service-object type (e.g. CdcService / PlatformEventsService) with the
+// module's listener, producing the `service <Type> on new <Listener>(...)` template
+// and the full remote-method contract the service must implement. Mirrors the
+// representation used by the Ballerina VS Code extension's library tooling.
+function buildServices(mod, modId, orgName) {
+    const listeners = mod.listeners || [];
+    const serviceTypes = mod.serviceTypes || [];
+    if (listeners.length === 0 || serviceTypes.length === 0) return [];
+
+    // Connectors typically expose a single listener; pair every service type with it.
+    const lsn = listeners[0];
+    const listenerParams = transformParameters(
+        (lsn.initMethod && lsn.initMethod.parameters) || [],
+        modId,
+        orgName,
+    ).map((p) => {
+        const param = { type: { name: p.type.name }, name: p.name };
+        if (p.default !== undefined) param.default = p.default;
+        return param;
+    });
+
+    return serviceTypes.map((svc) => ({
+        type: "fixed",
+        name: svc.name,
+        isDeprecated: svc.isDeprecated || false,
+        listener: { name: `${modId}:${lsn.name}`, parameters: listenerParams },
+        // The service template renders methods as `remote function <name>(...)`. Resource
+        // functions have no name (only accessor/path), so drop them rather than emit a
+        // broken `remote function undefined(...)` — listener service types are remote-method based.
+        methods: (svc.methods || [])
+            .map((m) => buildServiceMethod(m, modId, orgName))
+            .filter((m) => m.name),
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// Annotations
+// ---------------------------------------------------------------------------
+
+// Surfaces service- and resource-level annotations (e.g. ServiceConfig,
+// ResourceConfig). Central reports attachment points as a comma-separated string
+// (e.g. "service, type"); the renderer only emits SERVICE and OBJECT_METHOD points,
+// matching the extension, so annotations attached only to parameters/returns/record
+// fields/types are skipped.
+function buildAnnotations(mod) {
+    const result = [];
+    for (const a of mod.annotations || []) {
+        const points = String(a.attachmentPoints || "").split(",").map((s) => s.trim());
+        let attachmentPoint = null;
+        if (points.includes("service")) attachmentPoint = "SERVICE";
+        else if (points.includes("object function")) attachmentPoint = "OBJECT_METHOD";
+        if (!attachmentPoint) continue;
+        result.push({
+            name: a.name,
+            description: (a.description || "").trim(),
+            attachmentPoint,
+            isDeprecated: a.isDeprecated || false,
+        });
+    }
+    return result;
+}
+
+// ---------------------------------------------------------------------------
 // Main entry: centralDocsToLibrary
 // ---------------------------------------------------------------------------
 
@@ -417,12 +495,17 @@ function centralDocsToLibrary(centralApiResponse) {
     const allFunctions = (mod.functions || []).map((m) => transformMethod(m, modId, orgName));
     const functions = allFunctions.filter((f) => f.type === "Normal Function" || f.type === "Remote Function");
 
+    const services = buildServices(mod, modId, orgName);
+    const annotations = buildAnnotations(mod);
+
     return {
         name: `${orgName}/${modId}`,
         description: (mod.summary || "").trim(),
         typeDefs,
         clients,
         functions,
+        services,
+        annotations,
     };
 }
 

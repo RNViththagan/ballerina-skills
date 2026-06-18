@@ -22,7 +22,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { fetchJson } = require("./net.js");
-const { runBal } = require("./exec.js");
 const {
     PackageNotFoundError,
     UpstreamError,
@@ -32,58 +31,6 @@ const {
 //   GET registry/packages?org=<org>&limit=1000&readme=false  — list an org's packages
 //   GET docs/<org>/<name>/<version>                           — fetch a package's API docs
 const CENTRAL_BASE_URL = "https://api.central.ballerina.io/2.0/";
-
-// ---------------------------------------------------------------------------
-// bal search parsing
-// ---------------------------------------------------------------------------
-
-function parseSearchOutput(stdout) {
-    if (!stdout) {
-        return [];
-    }
-    const rows = [];
-    for (const rawLine of stdout.split("\n")) {
-        const line = rawLine.trim();
-        if (!line || !line.startsWith("|") || !line.endsWith("|")) {
-            continue;
-        }
-        const cells = line.slice(1, -1).split("|").map((c) => c.trim());
-        if (cells.length < 2) {
-            continue;
-        }
-        const first = cells[0];
-        // Skip header row and separator row
-        if (first === "NAME" || /^-+$/.test(first)) {
-            continue;
-        }
-        // A valid result row has org/name in the first column
-        if (!first.includes("/")) {
-            continue;
-        }
-        const [name, description = "", author = "", date = "", version = ""] = cells;
-        rows.push({ name, description, author, date, version });
-    }
-    return rows;
-}
-
-// ---------------------------------------------------------------------------
-// searchPackages
-// ---------------------------------------------------------------------------
-
-async function searchPackages(keyword, { execFile, signal } = {}) {
-    // Take only the part before any shell metacharacter, then keep tokens that match
-    // a safe allowlist. Even though we don't invoke a shell, this prevents the agent
-    // (or a typo) from injecting flags or unrelated arguments into the bal command line.
-    const firstChunk = String(keyword || "").split(/[;\n&|`<>$"'\\]/)[0].trim();
-    const tokens = firstChunk
-        .split(/\s+/)
-        .filter((t) => /^[A-Za-z0-9._\-\/]+$/.test(t) && !t.startsWith("-"));
-    if (tokens.length === 0) {
-        return [];
-    }
-    const result = await runBal(["search", ...tokens], { execFile, signal });
-    return parseSearchOutput(result.stdout || "");
-}
 
 // ---------------------------------------------------------------------------
 // fetchOrgPackages
@@ -122,7 +69,7 @@ async function fetchDocs(org, name, version, { fetch, signal } = {}) {
         // 404 from the docs endpoint means the (org, name, version) tuple isn't published.
         if (err instanceof UpstreamError && err.details && err.details.status === 404) {
             throw new PackageNotFoundError(`${org}/${name}:${version}`, {
-                suggestion: `Verify the package exists and the version '${version}' is published. Run search_libraries to see available packages.`,
+                suggestion: `Verify the package exists and the version '${version}' is published. Run 'bal search' to see available packages.`,
                 details: { org, name, version },
             });
         }
@@ -203,8 +150,6 @@ async function resolveVersion(org, name, opts = {}) {
 
 module.exports = {
     CENTRAL_BASE_URL,
-    parseSearchOutput,
-    searchPackages,
     fetchOrgPackages,
     resolveLatestVersion,
     fetchDocs,
