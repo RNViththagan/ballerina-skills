@@ -91,7 +91,7 @@ Critical rules — NO HALLUCINATION:
 - Copy field values EXACTLY — preserve backslashes and special characters.
 - For resource functions: `accessor` is ONLY the HTTP method (e.g., `post`, `get`); the path segments are separate.
 - If no relevant functions found for a library, omit that library from the summary.
-- The output may contain `// Special Agent Note: TypeX FROM ballerina/something package` comments. These mark types that live in a different package — if you need those types, tell the caller they come from that other package (and call `get_library` on it if needed).
+- The output may contain `// Special Agent Note: TypeX FROM ballerina/something package` comments. These mark types that live in a different package — tell the caller they come from that package and to import it **only if their code names one of those types** (don't present the import as always required). Call `get_library` on that package if you need its full API.
 
 **Step 5 — Return compact summary**
 
