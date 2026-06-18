@@ -7,7 +7,7 @@
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- Event/streaming listeners (change-data-capture, message topics/queues, etc.) usually attach the service to a vendor-specific channel/topic/path string (e.g. `service "<channel>" on lsn`). That string is **not** in the library API — get it from the connector's README/examples or the vendor's platform docs, don't guess it.
+- An event/streaming listener (change-data-capture, message topic/queue, etc.) attaches its service to a vendor channel/topic string that sits **between the service type and `on`**: `service <pkg>:<ServiceType> "<channel>" on <listener>`. This string isn't in the library API — get it from the connector README/vendor docs (ask the `library` agent) and wire it in **before** writing the service. Without it the code usually still compiles but the service silently receives nothing — never ship an event service without its channel.
 - Implement a `main` function OR a service — not both, unless the requirement explicitly needs both.
 
 ## Data
