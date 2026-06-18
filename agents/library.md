@@ -118,6 +118,8 @@ Types needed:
 
 Include only the block(s) the task needs — a `Client` for calling an API, a `Listener/Service` for receiving events. Keep the summary under 30 lines total. The caller will use this to write Ballerina code — function signatures and type shapes are what matter most.
 
+If the library needs a required companion import to work at runtime, say so. For a **SQL database client**, tell the caller to add the matching driver as a side-effect import — `import ballerinax/<db>.driver as _;` (e.g. `postgresql.driver`, `mysql.driver`, `mssql.driver`, `oracledb.driver`, `h2.driver`) — and that it is **required and must stay even though it looks unused** (it loads the JDBC driver; without it the client fails to connect at runtime).
+
 Return **only** this format — don't append a prose walkthrough, a "Complete Example", or a "Key Notes" section (per the context-only role above).
 
 ## Ballerina library namespaces

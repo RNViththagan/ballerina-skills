@@ -14,7 +14,6 @@ When the user asks to create a new project, service, or program from scratch:
 ```bash
 bal new <project-name>   # scaffolds main.bal + Ballerina.toml
 cd <project-name>
-bal build                # confirm baseline compiles before writing code
 ```
 
 - Read the generated `Ballerina.toml` to understand the package (name, org, version)
@@ -31,12 +30,12 @@ bal build                # confirm baseline compiles before writing code
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
 
-**Step 3 — Write the code**: Follow all rules in [code-rules.md](code-rules.md). Key rules:
+**Step 3 — Write the code**: **Strictly follow the rules in [code-rules.md](code-rules.md)** — check your code against them as you write. If the Ballerina language server (LSP) is available, **prefer `LSP` tool feedback over running `bal build` repeatedly** — use `hover` to confirm a symbol's type/signature, `goToDefinition`/`goToImplementation` to inspect an API's real shape, `findReferences`/`documentSymbol`/`workspaceSymbol` to locate declarations. Fix issues found via LSP before building. Reserve `bal build` for the final validation step. Key rules:
 - Use records for all data — never `json` or `map<json>` directly
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call
 
-**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), re-consult the `library` agent's API summary — or ask it for the specific detail you're missing — rather than re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
+**Step 4 — Validate**: Run `bal build` once as the final check after using LSP feedback to resolve issues while writing. Fix any remaining errors, then build again — repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), re-consult the `library` agent's API summary — or ask it for the specific detail you're missing — rather than re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
 
 For langlib API quick reference: [langlib-reference.md](langlib-reference.md)
 
