@@ -24,7 +24,8 @@ bal build                # confirm baseline compiles before writing code
 
 **Step 1 — Read existing code and plan file layout**: Read `.bal` files and `Ballerina.toml` to understand the project and its existing layout. Place new code in the file that fits its concern rather than everything in `main.bal` (see [code-rules.md](code-rules.md) for file organization).
 
-**Step 2 — Discover libraries if needed**: If the task requires an external connector or library you don't know, invoke the `library` agent — it finds the package and returns a compact API summary to build from. Then add the `import` to your `.bal` file; `bal build` resolves the dependency from Central.
+**Step 2 — Discover libraries if needed**: If the task needs an external connector or library you don't know, invoke the `library` agent — give it the full task (including auth and trigger/event details) so its first summary already covers the client or `listener` constructor and the auth/connection config you'll need. Add the returned `import` to your `.bal` file; `bal build` resolves the dependency from Central. Trust the summary — don't `bal pull` or read package source to double-check it (that only adds latency); if a detail is genuinely missing, ask the `library` agent rather than guessing.
+- Prefer a maintained `ballerinax/*` connector over an older standalone `trigger.*` package when both cover the same events.
 - No `library` agent (non–Claude Code agents)? Use `bal` directly: `bal search <keyword>`, then `bal pull <org/name>` and read its `client.bal`/`types.bal` under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/`.
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
@@ -34,7 +35,7 @@ bal build                # confirm baseline compiles before writing code
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call
 
-**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), re-consult the API summary from the `library` agent — trust it rather than re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
+**Step 4 — Validate**: Run `bal build`. Fix every error before moving on. Repeat until clean. If an error is about a library's own API (wrong method, listener, or service signature), re-consult the `library` agent's API summary — or ask it for the specific detail you're missing — rather than re-guessing. If errors remain after several attempts, stop and report each unresolved error with its file and line number.
 
 For langlib API quick reference: [langlib-reference.md](langlib-reference.md)
 

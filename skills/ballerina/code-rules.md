@@ -43,10 +43,6 @@
 - Do not import auto-imported langlibs: `lang.string`, `lang.boolean`, `lang.float`, `lang.decimal`, `lang.int`, `lang.map`.
 - Packages with dots in names use aliases: `import org/package.one as one;`
 - Submodules in `generated/<moduleName>/`: import as `import <packageName>.<moduleName>;` — the import should contain only the package name and submodule name, no path components.
-
-## Choosing Libraries
-
-- Prefer the actively-maintained `ballerinax/*` connector over a standalone `trigger.*` listener package. When a `ballerinax/<x>` connector and a separate `ballerinax/trigger.<x>` package both cover the same events, use the connector and its built-in listener — the `trigger.*` package is usually the older, less-maintained option (compare `bal search` dates and versions). Never blend the two APIs; that mismatch is a common cause of code that won't compile.
 - For SQL databases, import the matching `.driver` package alongside the client so the JDBC driver is on the runtime classpath (also required for GraalVM native builds):
   ```ballerina
   import ballerinax/postgresql;

@@ -14,7 +14,7 @@ You have two tools for this:
 
 ## If `get_library` is not available
 
-If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions) and `types.bal` (records/enums/unions) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
+If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions), `types.bal` (records/enums/unions), and — for event-driven libraries — `service_types.bal` and `listener.bal` (service contract + listener) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
 
 Reading `.bala` source is a **fallback only** — for when `get_library` is unavailable (above) or returns an error. When `get_library` works, its output is authoritative and complete (clients, types, services, listeners, annotations); **do not** proactively `bal pull` or read `.bala` files to double-check or supplement it. That second pass only adds latency.
 
@@ -80,8 +80,8 @@ Critical rules:
 
 The output of `get_library` is Ballerina-syntax. Read it like Ballerina source code. Then distill:
 
-1. **Identify relevant clients** — look for `client class <Name> { ... }` blocks whose surrounding `# ...` description matches the user's task.
-2. **Identify relevant functions** — from each selected client, keep only the functions needed for the task. Exclude `function init(...)` (constructors) unless the user is asking how to initialise. For resource functions, preserve the `accessor` (HTTP method) and path separately — never merge them into one string.
+1. **Identify the relevant clients or services** — for calling an API, find the `client class <Name> { ... }` block whose `# ...` description matches the task. For event-driven tasks, find the `// --- Service ---` block (the `service ... on new <Listener>(...)` template with its remote methods) instead.
+2. **Identify relevant functions** — from each selected client, keep only the functions needed for the task, **plus the `init` (or listener) constructor and the connection/auth config types it takes** — the caller needs these to construct the client or listener. For resource functions, preserve the `accessor` (HTTP method) and path separately — never merge them into one string.
 3. **Identify required types** — include only the type definitions (records, enums, unions) that are referenced by the parameters or return types of the functions you kept. Look for `type <Name> record { ... }`, `enum <Name> { ... }`, `type <Name> A|B|C;` declarations.
 4. **Exclude** anything not directly needed for the user's specific request.
 
@@ -102,14 +102,18 @@ Library: <org/name>
 Description: <one line>
 
 Client: <ClientName>
+  - init(<configType> <param>) → error?            // how to construct it
   - <functionName>(<param1>, <param2>) → <returnType>  // brief description of what it does
-  - <functionName>(<param1>) → <returnType>
+
+Listener/Service (event-driven libraries only):
+  listener: <alias>:<Listener>(<configType> <param>)
+  service <alias>:<ServiceType>: <remoteFn>(<param>) → <returnType>, ...
 
 Types needed:
   - <TypeName>: <field1>: <type>, <field2>: <type>
 ```
 
-Keep the summary under 30 lines total. The caller will use this to write Ballerina code — function signatures and type shapes are what matter most.
+Include only the block(s) the task needs — a `Client` for calling an API, a `Listener/Service` for receiving events. Keep the summary under 30 lines total. The caller will use this to write Ballerina code — function signatures and type shapes are what matter most.
 
 ## Ballerina library namespaces
 
