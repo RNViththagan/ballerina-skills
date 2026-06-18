@@ -31,7 +31,7 @@ bal build                # confirm baseline compiles before writing code
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
 
-**Step 3 — Write the code**: Follow all rules in [code-rules.md](code-rules.md). If the Ballerina language server (LSP) is available, lean on its live diagnostics and completions as you write to catch type/syntax errors early — faster than waiting for a full `bal build`. Key rules:
+**Step 3 — Write the code**: **Strictly follow the rules in [code-rules.md](code-rules.md)** — check your code against them as you write. If the Ballerina language server (LSP) is available, lean on its live diagnostics and completions as you write to catch type/syntax errors early — faster than waiting for a full `bal build`. Key rules:
 - Use records for all data — never `json` or `map<json>` directly
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call
