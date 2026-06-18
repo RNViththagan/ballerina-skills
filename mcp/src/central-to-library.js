@@ -319,6 +319,52 @@ function transformRecordFields(fields, modId, orgName) {
 }
 
 // ---------------------------------------------------------------------------
+// Listener-based services
+// ---------------------------------------------------------------------------
+
+function buildServiceMethod(method, modId, orgName) {
+    const tm = transformMethod(method, modId, orgName);
+    return {
+        name: tm.name,
+        description: tm.description,
+        isDeprecated: method.isDeprecated || false,
+        parameters: tm.parameters.map((p) => ({ type: { name: p.type.name }, name: p.name })),
+        return: tm.return,
+        optional: false,
+    };
+}
+
+// Pairs each service-object type (e.g. CdcService / PlatformEventsService) with the
+// module's listener, producing the `service <Type> on new <Listener>(...)` template
+// and the full remote-method contract the service must implement. Mirrors the
+// representation used by the Ballerina VS Code extension's library tooling.
+function buildServices(mod, modId, orgName) {
+    const listeners = mod.listeners || [];
+    const serviceTypes = mod.serviceTypes || [];
+    if (listeners.length === 0 || serviceTypes.length === 0) return [];
+
+    // Connectors typically expose a single listener; pair every service type with it.
+    const lsn = listeners[0];
+    const listenerParams = transformParameters(
+        (lsn.initMethod && lsn.initMethod.parameters) || [],
+        modId,
+        orgName,
+    ).map((p) => {
+        const param = { type: { name: p.type.name }, name: p.name };
+        if (p.default !== undefined) param.default = p.default;
+        return param;
+    });
+
+    return serviceTypes.map((svc) => ({
+        type: "fixed",
+        name: svc.name,
+        isDeprecated: svc.isDeprecated || false,
+        listener: { name: `${modId}:${lsn.name}`, parameters: listenerParams },
+        methods: (svc.methods || []).map((m) => buildServiceMethod(m, modId, orgName)),
+    }));
+}
+
+// ---------------------------------------------------------------------------
 // Main entry: centralDocsToLibrary
 // ---------------------------------------------------------------------------
 
@@ -417,12 +463,15 @@ function centralDocsToLibrary(centralApiResponse) {
     const allFunctions = (mod.functions || []).map((m) => transformMethod(m, modId, orgName));
     const functions = allFunctions.filter((f) => f.type === "Normal Function" || f.type === "Remote Function");
 
+    const services = buildServices(mod, modId, orgName);
+
     return {
         name: `${orgName}/${modId}`,
         description: (mod.summary || "").trim(),
         typeDefs,
         clients,
         functions,
+        services,
     };
 }
 
