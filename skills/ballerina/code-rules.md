@@ -6,6 +6,8 @@
   - Allowed types: `string`, `int`, `decimal`, `boolean` only.
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
+- Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
+- Event/streaming listeners (Change Data Capture, message topics/queues, etc.) usually attach the service to a vendor-specific channel/topic/path string (e.g. `service "/data/LeadChangeEvent" on lsn`). That string is **not** in the library API — get it from the connector's README/examples or the vendor's platform docs, don't guess it.
 - Implement a `main` function OR a service — not both, unless the requirement explicitly needs both.
 
 ## Data
@@ -21,6 +23,7 @@
 ## Identifiers
 
 - Always use **two-word camelCase** for ALL identifiers: variables, parameters, record fields (e.g., `userName`, `baseUrl`, `responseBody`).
+- Exception: a record whose fields bind to external payload/JSON keys (e.g. via `cloneWithType()`) must use the **exact source key names** — even if that means single-word or PascalCase (e.g. `Name`, `IsConverted` from a Salesforce event). The wire contract wins over the naming convention here.
 
 ## Function Calls
 
