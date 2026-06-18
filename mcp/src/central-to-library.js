@@ -365,6 +365,33 @@ function buildServices(mod, modId, orgName) {
 }
 
 // ---------------------------------------------------------------------------
+// Annotations
+// ---------------------------------------------------------------------------
+
+// Surfaces service- and resource-level annotations (e.g. ServiceConfig,
+// ResourceConfig). Central reports attachment points as a comma-separated string
+// (e.g. "service, type"); the renderer only emits SERVICE and OBJECT_METHOD points,
+// matching the extension, so annotations attached only to parameters/returns/record
+// fields/types are skipped.
+function buildAnnotations(mod) {
+    const result = [];
+    for (const a of mod.annotations || []) {
+        const points = String(a.attachmentPoints || "").split(",").map((s) => s.trim());
+        let attachmentPoint = null;
+        if (points.includes("service")) attachmentPoint = "SERVICE";
+        else if (points.includes("object function")) attachmentPoint = "OBJECT_METHOD";
+        if (!attachmentPoint) continue;
+        result.push({
+            name: a.name,
+            description: (a.description || "").trim(),
+            attachmentPoint,
+            isDeprecated: a.isDeprecated || false,
+        });
+    }
+    return result;
+}
+
+// ---------------------------------------------------------------------------
 // Main entry: centralDocsToLibrary
 // ---------------------------------------------------------------------------
 
@@ -464,6 +491,7 @@ function centralDocsToLibrary(centralApiResponse) {
     const functions = allFunctions.filter((f) => f.type === "Normal Function" || f.type === "Remote Function");
 
     const services = buildServices(mod, modId, orgName);
+    const annotations = buildAnnotations(mod);
 
     return {
         name: `${orgName}/${modId}`,
@@ -472,6 +500,7 @@ function centralDocsToLibrary(centralApiResponse) {
         clients,
         functions,
         services,
+        annotations,
     };
 }
 
