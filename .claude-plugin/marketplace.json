@@ -16,7 +16,7 @@
       "tags": ["wso2", "ballerina"]
     },
     {
-      "name": "ballerina-library",
+      "name": "ballerina-libdev",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/ballerina-platform/ballerina-library.git",
