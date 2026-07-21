@@ -16,10 +16,9 @@ Register the marketplace and install the plugin:
 ```bash
 /plugin marketplace add ballerina-platform/skills
 /plugin install ballerina@ballerina-skills
-/plugin install ballerina-libdev@ballerina-skills
 ```
 
-Restart the session to activate installed plugins. The `ballerina` plugin provides language-server code intelligence, the `ballerina` skill, the `library` discovery agent, and activation hooks. The `ballerina-libdev` plugin provides library-development skills, starting with connector generation. The MCP server bundled with `ballerina` ships pre-built; no `npm install` step is required.
+Restart the session to activate the language server, the `ballerina` skill, the `library` discovery agent, and the activation hooks. The MCP server ships pre-built; no `npm install` step is required.
 
 ### Other agents (Open Agent Skills CLI)
 
