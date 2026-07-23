@@ -14,6 +14,18 @@
       "description": "Ballerina language support — LSP code intelligence for .bal files plus an AI coding assistant for writing integrations and services, discovering libraries from Ballerina Central, and running and testing projects.",
       "category": "development",
       "tags": ["wso2", "ballerina"]
+    },
+    {
+      "name": "ballerina-libdev",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ballerina-platform/ballerina-library.git",
+        "path": "agent-skills",
+        "ref": "main"
+      },
+      "description": "Agent skills for developing and maintaining Ballerina library modules.",
+      "category": "library",
+      "tags": ["ballerina", "library", "connectors"]
     }
   ]
 }
