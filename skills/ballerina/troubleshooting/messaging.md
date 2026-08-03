@@ -9,7 +9,7 @@ Messaging connectors share recurring failure modes: broker reachability, auth, d
 | `Connection refused` to broker      | Kafka not running, wrong bootstrap server, network | Verify the broker address in `kafka:ProducerConfiguration` / `kafka:ConsumerConfiguration`   |
 | `Leader not available`              | Topic missing, or broker in election               | Create the topic; wait for leader election to finish                                          |
 | `SASL authentication failure`       | Wrong credentials or wrong SASL mechanism          | Verify `securityProtocol` and SASL configuration                                              |
-| Consumer not receiving messages     | Wrong `groupId` or `autoOffsetReset`               | Use a unique `groupId` per consumer group; set `autoOffsetReset = "earliest"` during testing  |
+| Consumer not receiving messages     | Wrong `groupId` or `offsetReset`                   | Use a unique `groupId` per consumer group; set `offsetReset: kafka:OFFSET_RESET_EARLIEST` during testing |
 | Messages published but not consumed | Listener up but not dispatching                    | Check `pollingInterval`, `concurrentConsumers`, and that the service is attached              |
 
 Reference consumer config:
@@ -19,7 +19,7 @@ kafka:ConsumerConfiguration consumerConfig = {
     groupId: "my-group",          // must be unique per consumer group
     topics: ["my-topic"],
     pollingInterval: 1,           // seconds between polls
-    autoOffsetReset: "earliest",  // start from the beginning for new groups
+    offsetReset: kafka:OFFSET_RESET_EARLIEST,  // start from the beginning for new groups
     autoCommit: false             // manual commit is more reliable
 };
 ```
