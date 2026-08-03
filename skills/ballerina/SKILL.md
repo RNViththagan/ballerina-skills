@@ -30,7 +30,7 @@ cd <project-name>
 - **Never hand-edit `Dependencies.toml`** to add dependencies — it is auto-managed by the build tool. (Deleting it to force a clean re-resolution is fine.)
 - **Never edit `Ballerina.toml` to add dependencies** — imports + `bal build` handle this automatically.
 
-**Step 3 — Write the code**: **Strictly follow the rules in [code-rules.md](code-rules.md)** — check your code against them as you write. If the Ballerina language server (LSP) is available, use the `LSP` tool while writing — `hover` to confirm a symbol's type/signature, `goToDefinition`/`goToImplementation` to inspect an API's real shape, `documentSymbol`/`workspaceSymbol` to locate declarations. It provides navigation/intelligence; `bal build` in Step 4 is the error check. Key rules:
+**Step 3 — Write the code**: **Strictly follow the rules in [code-rules.md](code-rules.md)** — check your code against them as you write. That file covers every Ballerina program and ends with a table routing to domain rules (`rules/http.md`, `rules/messaging.md`, `rules/graphql.md`, `rules/workspace.md`, `rules/tests.md`); read the ones your task touches **before** writing that part, and only those. If the Ballerina language server (LSP) is available, use the `LSP` tool while writing — `hover` to confirm a symbol's type/signature, `goToDefinition`/`goToImplementation` to inspect an API's real shape, `documentSymbol`/`workspaceSymbol` to locate declarations. It provides navigation/intelligence; `bal build` in Step 4 is the error check. Key rules:
 - Use records for all data — never `json` or `map<json>` directly
 - Two-word camelCase for every identifier
 - Named arguments for every function/method call

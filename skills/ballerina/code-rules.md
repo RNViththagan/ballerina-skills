@@ -1,5 +1,19 @@
 # Ballerina Code Rules
 
+Everything in this file applies to **all** Ballerina code. Read it in full.
+
+## Domain rules — read the ones your task needs
+
+These are not optional extras; they are the rules for their domain, kept out of this file so you only load what applies. Read the matching file **before** writing that part of the code.
+
+| Task involves | Read |
+| ------------- | ---- |
+| An HTTP service, or calling an HTTP API | [rules/http.md](rules/http.md) |
+| A Kafka / RabbitMQ / NATS / JMS consumer | [rules/messaging.md](rules/messaging.md) |
+| A GraphQL service | [rules/graphql.md](rules/graphql.md) |
+| More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
+| Tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
+
 ## Structure
 
 - Define `configurable` variables for all external values (API keys, hosts, ports, credentials).
@@ -7,9 +21,7 @@
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- Some event/streaming listeners (change-data-capture, certain MQ connectors) attach their service to a vendor channel/topic string between the service type and `on`: `service <pkg>:<ServiceType> "<channel>" on <listener>`. The channel is the **service's attach path** — not a listener constructor argument. Get it from the connector README/vendor docs (ask the `library` agent) before writing the service; omitting it usually compiles but the service silently receives nothing.
-  - This does **not** apply to connectors that configure the destination on the listener itself — Kafka (`topics`), RabbitMQ queue-per-listener, and similar. There `service on myListener { ... }` is the complete attach form, and there is no channel string to hunt for. Confirm which shape the connector uses before assuming either.
-- Implement a `main` function OR a service — not both **in the same package**. When the requirement genuinely needs both (a service plus a mock producer, seeder, or CLI companion), use a workspace with one package per entry point — see Workspace Projects below. The constraint is one entry point per package, not one per repository.
+- Implement a `main` function OR a service — not both **in the same package**. When the requirement genuinely needs both, use a workspace with one package per entry point ([rules/workspace.md](rules/workspace.md)).
 
 ## Data
 
@@ -31,6 +43,7 @@
 - Dot notation (`.`) for normal functions. Arrow notation (`->`) for remote and resource functions.
 - Resource function invocation: `clientVar->/path/["param"].get(key="value")`
 - Always use **named arguments**: `client->post("/path", message = payload)` — never positional.
+- A remote call (`->`) cannot be a sub-expression. Assign it to a variable first, then use that variable.
 
 ## Type Safety
 
@@ -50,86 +63,7 @@
   import ballerinax/postgresql;
   import ballerinax/postgresql.driver as _;
   ```
-  The same pattern applies to the other SQL connectors — `mysql` + `mysql.driver`, `mssql` + `mssql.driver`, `oracledb` + `oracledb.driver`, `h2` + `h2.driver`.
-
-## HTTP Service Design
-
-When creating an HTTP service, define resource function signatures first with full return types:
-
-```ballerina
-resource function get users() returns UserList|http:NotFound|http:NotImplemented {
-    return http:NOT_IMPLEMENTED;
-}
-```
-
-Use `http:NotImplemented` as a placeholder return type initially, then implement each resource function.
-
-## HTTP Client Resilience
-
-Configure retries on the client — do not hand-write a retry loop with `runtime:sleep`:
-
-```ballerina
-http:Client partnerClient = check new (partnerBaseUrl,
-    timeout = 30,
-    retryConfig = {
-        count: 2,                              // RETRIES, not attempts — 2 means 3 calls
-        interval: 1,
-        backOffFactor: 2.0,
-        maxWaitInterval: 20,
-        statusCodes: [500, 502, 503, 504]
-    }
-);
-```
-
-- `count` is the number of **retries**, so "max N attempts" is `count: N - 1`. Verified: `count: 2` produces exactly 3 requests, spaced ~1 s then ~2 s.
-- `statusCodes` is an explicit list, not a range. `[500, 502, 503, 504]` is *not* "all 5xx" — 501, 505, 507 and 511 fall through unretried. List every code you mean.
-- Exhausting retries keeps the two failure kinds distinguishable: a listed status code comes back as an **`http:Response` carrying its real status**; a transport failure (DNS, refused, timeout) comes back as an **`http:ClientError`**. So there is never a reason to invent a status code for a call that never reached the server — record "no response" as its own outcome.
-- The built-in retry does not log individual attempts. Needing per-attempt correlation logging is the only good reason to write the loop yourself; preserving the status code is not.
-
-## Message-Driven Services (Kafka, RabbitMQ, NATS, JMS)
-
-A listener hands the remote method a **batch** of records, not one. When the requirement is at-least-once delivery ("if X fails, do not acknowledge the message"), the commit boundary *is* the design — get it wrong and messages are silently lost under load.
-
-- `caller->'commit()` commits **every offset the consumer holds — the whole batch**, not the record in hand. Call it **once, after the loop**. A commit inside the loop acknowledges records the loop has not processed yet, including ones it already skipped.
-- To block the ack on failure, `caller->seek(...)` back to that record's offset and return **without** committing. Without the `seek` the record is not redelivered in-session: the consumer position has already advanced past it.
-- `caller->commitOffset(...)` takes the **next offset to consume**, not the offset just processed. To acknowledge record `N`, commit `N + 1` — passing `N` acknowledges nothing and redelivers it forever.
-- Decide per failure kind whether it blocks the ack, before writing the loop:
-
-  | Failure | Blocks the ack? |
-  | ------- | --------------- |
-  | Persistence or another required side effect | **Yes** — seek, return, do not commit |
-  | Malformed payload that can never succeed | No — log and skip, or the consumer wedges on a poison message forever |
-  | Downstream call the design tolerates failing | No — record the outcome and carry on |
-
-- Set `autoCommit: false` **only** together with the above. Manual commit without them is strictly worse than auto-commit.
-- Need the untouched payload (audit, replay, dead-letter)? Bind `value` as `string` or `byte[]` via record inclusion and persist that before parsing — binding straight to a typed record discards the original bytes, and a parse failure then loses the event entirely:
-
-  ```ballerina
-  type RawOrderRecord record {|
-      *kafka:AnydataConsumerRecord;
-      string value;
-  |};
-  ```
-
-## GraphQL Services
-
-If the user requests a GraphQL service and has not provided their own schema:
-- Write the proposed GraphQL schema first (before generating Ballerina code).
-- Use the same names from the GraphQL schema when defining Ballerina record types.
-
-## Workspace Projects
-
-When working with a Ballerina workspace (root `Ballerina.toml` with a `[workspace]` section):
-
-**Creating a new package:**
-1. Create the package directory with a `Ballerina.toml` containing the `[package]` section (`name`, `org`, `version`).
-2. Add the new package path to the `packages` array in the root workspace `Ballerina.toml`.
-3. Create initial `.bal` files in the new package.
-
-**Guidelines:**
-- Always prefer modifying existing packages over creating new ones.
-- The root workspace `Ballerina.toml` should only contain a `[workspace]` section.
-- Do not modify existing package `Ballerina.toml` files for dependency management.
+  The same pattern applies to the other SQL connectors — `mysql` + `mysql.driver`, `mssql` + `mssql.driver`, `oracledb` + `oracledb.driver`, `h2` + `h2.driver`. This holds for every SQL connector: none of them bundle a driver. Without it the code compiles and fails at runtime.
 
 ## Config.toml
 
@@ -150,16 +84,6 @@ When working with a Ballerina workspace (root `Ballerina.toml` with a `[workspac
 - Do not create documentation markdown files.
 - **Never hand-edit `Dependencies.toml`** — it is auto-managed by the build tool. Do not create or hand-modify it to manage dependencies; deleting it to force a clean re-resolution (then rebuilding) is a valid troubleshooting step.
 - **Never edit `Ballerina.toml` to add dependencies** — add the `import` statement in the `.bal` file and run `bal build`; Ballerina resolves and downloads packages from Central automatically.
-
-## Tests
-
-- Only write tests if the user explicitly asks.
-- Use the `ballerina/test` module and any service-specific test libraries.
-- Follow the `instructions` field in `ballerina/test` library docs and the `testGenerationInstruction` field in the service library's API docs when writing tests.
-- Test an HTTP service through an `http:Client` against the running service — assert its public contract, not internals.
-- Override `configurable` values for tests in `tests/Config.toml` (not the package's `Config.toml`).
-- To mock a client or connector, wrap its construction in a small init function so `@test:Mock` can replace it.
-- Use `dependsOn` only when test ordering is the behavior under test — not to sequence otherwise-independent tests.
 
 ## Other Rules
 
