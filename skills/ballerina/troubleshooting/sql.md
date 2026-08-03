@@ -50,6 +50,61 @@ mysql:Client dbClient = check new (
 );
 ```
 
+## Parameter binding — compiles clean, fails at execution
+
+Binding the wrong Ballerina type into a column is not a compile error. It surfaces only
+when the statement runs, so `bal build` passing proves nothing here.
+
+```text
+ERROR: column "receivedAt" is of type timestamp with time zone
+       but expression is of type character varying          (SQL state 42804)
+```
+
+Verified against PostgreSQL 16 with `ballerinax/postgresql` 1.19.0:
+
+| Column type       | Bind this                                | Not this                                        |
+| ----------------- | ---------------------------------------- | ----------------------------------------------- |
+| `timestamptz` / `timestamp` | `time:Utc` or `time:Civil` — both work directly | a `string` (e.g. `time:utcToString(...)`) → 42804 |
+| PostgreSQL `jsonb` | `postgresql:JsonBinaryValue`            | a bare `string` parameter → 42804               |
+| PostgreSQL `json`  | `postgresql:JsonValue`                  | a bare `string` parameter → 42804               |
+
+```ballerina
+time:Utc receivedAt = time:utcNow();
+postgresql:JsonBinaryValue payloadValue = new (rawPayload);   // rawPayload is json|string
+_ = check dbClient->execute(`
+    INSERT INTO events ("tradeId", payload, "receivedAt")
+    VALUES (${tradeId}, ${payloadValue}, ${receivedAt})
+`);
+```
+
+An explicit SQL cast (`${text}::jsonb`, `CAST(${text} AS JSONB)`) also works, but the typed
+wrapper is the intended path and does not depend on getting the cast syntax right.
+
+### Identifier casing
+
+PostgreSQL folds unquoted identifiers to **lowercase**. `CREATE TABLE t (receivedAt ...)`
+creates a column literally named `receivedat`; `"receivedAt"` preserves the case. Mixing the
+two gives:
+
+```text
+ERROR:  column "receivedat" does not exist
+```
+
+Pick one convention for the whole schema. If the DDL quotes camelCase names, every query
+must quote them too. Result-set mapping follows the **actual** column name — a mismatch
+surfaces as `sql:FieldMismatchError` or a missing-column error rather than a silent null.
+
+### Generated keys
+
+`sql:ExecutionResult.lastInsertId` works for PostgreSQL `SERIAL` / `IDENTITY` columns. When
+you need other generated columns in the same round trip, use `RETURNING` with `queryRow`:
+
+```ballerina
+int newId = check dbClient->queryRow(`
+    INSERT INTO routing_decisions (tradeId) VALUES (${tradeId}) RETURNING id
+`);
+```
+
 ## Query and result errors
 
 `sql:Error` hierarchy:
@@ -89,6 +144,8 @@ if result is sql:NoRowsError {
 | `Table doesn't exist`          | `42S02`   | Wrong table name or migrations not run   | Verify the schema; run pending migrations                            |
 | `Access denied`                | `28000`   | Wrong DB credentials                     | Verify user/password and grants                                      |
 | `Communications link failure`  | —         | Network issue, DB down, firewall blocked | Test reachability with `telnet`/`nc`                                 |
+| `is of type X but expression is of type Y` | `42804` | A temporal or JSON value was bound as `string` | Bind the native type — see [Parameter binding](#parameter-binding--compiles-clean-fails-at-execution) |
+| `column "..." does not exist` | `42703` | Unquoted identifier folded to lowercase | Match the DDL's quoting convention                                   |
 | Pool exhausted                 | —         | All pool slots occupied                  | Increase `maxOpenConnections` or hunt for leaks (missing `close()`)  |
 | `No suitable driver found` / `Error while loading database driver` | — | Driver package not imported | Add `import ballerinax/<vendor>.driver as _;` |
 
