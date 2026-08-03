@@ -9,7 +9,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 | Task involves | Read |
 | ------------- | ---- |
 | An HTTP service, or calling an HTTP API | [rules/http.md](rules/http.md) |
-| A Kafka / RabbitMQ / NATS / JMS consumer | [rules/messaging.md](rules/messaging.md) |
+| A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …) | [rules/messaging.md](rules/messaging.md) |
 | A GraphQL service | [rules/graphql.md](rules/graphql.md) |
 | More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
 | Tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
