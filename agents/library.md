@@ -120,6 +120,16 @@ Include only the block(s) the task needs — a `Client` for calling an API, a `L
 
 If the library needs a required companion import to work at runtime, say so. For a **SQL database client**, tell the caller to add the matching driver as a side-effect import — `import ballerinax/<db>.driver as _;` (e.g. `postgresql.driver`, `mysql.driver`, `mssql.driver`, `oracledb.driver`, `h2.driver`) — and that it is **required and must stay even though it looks unused** (it loads the JDBC driver; without it the client fails to connect at runtime).
 
+This applies to **every** SQL connector, `ballerinax/postgresql` included. Do not carve out an exception because a connector looks like it bundles its own driver — verified on postgresql 1.19.0, omitting the import compiles fine and then fails at runtime with:
+
+```
+error: Error while loading database driver. This may be because the database driver path
+is not configured correctly in the `Ballerina.toml` file or provided database driver
+version is not supported by the connector
+```
+
+State the import as required. Never talk the caller out of it.
+
 Return **only** this format — don't append a prose walkthrough, a "Complete Example", or a "Key Notes" section (per the context-only role above).
 
 ## Ballerina library namespaces

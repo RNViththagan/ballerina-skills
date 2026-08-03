@@ -20,7 +20,17 @@ Walk this checklist in order:
    import ballerinax/postgresql.driver as _;   // PostgreSQL
    ```
 
-   Without the driver import you'll often see `No suitable driver found for jdbc:...` or a generic init failure.
+   The code compiles without it — the failure only appears at runtime. Expect either
+   `No suitable driver found for jdbc:...` or, on recent connectors (verified on
+   `postgresql` 1.19.0):
+
+   ```
+   error: Error while loading database driver. This may be because the database driver path
+   is not configured correctly in the `Ballerina.toml` file or provided database driver
+   version is not supported by the connector
+   ```
+
+   This holds for every SQL connector — no client bundles its own driver.
 4. **Check whether the connection pool is exhausted.** See [performance.md](performance.md) for pool tuning.
 
 ### Typical client initialization
@@ -80,7 +90,7 @@ if result is sql:NoRowsError {
 | `Access denied`                | `28000`   | Wrong DB credentials                     | Verify user/password and grants                                      |
 | `Communications link failure`  | —         | Network issue, DB down, firewall blocked | Test reachability with `telnet`/`nc`                                 |
 | Pool exhausted                 | —         | All pool slots occupied                  | Increase `maxOpenConnections` or hunt for leaks (missing `close()`)  |
-| `No suitable driver found`    | —         | Driver package not imported              | Add `import ballerinax/<vendor>.driver as _;`                        |
+| `No suitable driver found` / `Error while loading database driver` | — | Driver package not imported | Add `import ballerinax/<vendor>.driver as _;` |
 
 ## Transactions
 
