@@ -7,8 +7,9 @@
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- An event/streaming listener (change-data-capture, message topic/queue, etc.) attaches its service to a vendor channel/topic string between the service type and `on`: `service <pkg>:<ServiceType> "<channel>" on <listener>`. The channel is the **service's attach path** — not a listener constructor argument. Get it from the connector README/vendor docs (ask the `library` agent) before writing the service; omitting it usually compiles but the service silently receives nothing.
-- Implement a `main` function OR a service — not both, unless the requirement explicitly needs both.
+- Some event/streaming listeners (change-data-capture, certain MQ connectors) attach their service to a vendor channel/topic string between the service type and `on`: `service <pkg>:<ServiceType> "<channel>" on <listener>`. The channel is the **service's attach path** — not a listener constructor argument. Get it from the connector README/vendor docs (ask the `library` agent) before writing the service; omitting it usually compiles but the service silently receives nothing.
+  - This does **not** apply to connectors that configure the destination on the listener itself — Kafka (`topics`), RabbitMQ queue-per-listener, and similar. There `service on myListener { ... }` is the complete attach form, and there is no channel string to hunt for. Confirm which shape the connector uses before assuming either.
+- Implement a `main` function OR a service — not both **in the same package**. When the requirement genuinely needs both (a service plus a mock producer, seeder, or CLI companion), use a workspace with one package per entry point — see Workspace Projects below. The constraint is one entry point per package, not one per repository.
 
 ## Data
 
