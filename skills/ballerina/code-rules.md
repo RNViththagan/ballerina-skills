@@ -63,6 +63,31 @@ resource function get users() returns UserList|http:NotFound|http:NotImplemented
 
 Use `http:NotImplemented` as a placeholder return type initially, then implement each resource function.
 
+## Message-Driven Services (Kafka, RabbitMQ, NATS, JMS)
+
+A listener hands the remote method a **batch** of records, not one. When the requirement is at-least-once delivery ("if X fails, do not acknowledge the message"), the commit boundary *is* the design — get it wrong and messages are silently lost under load.
+
+- `caller->'commit()` commits **every offset the consumer holds — the whole batch**, not the record in hand. Call it **once, after the loop**. A commit inside the loop acknowledges records the loop has not processed yet, including ones it already skipped.
+- To block the ack on failure, `caller->seek(...)` back to that record's offset and return **without** committing. Without the `seek` the record is not redelivered in-session: the consumer position has already advanced past it.
+- `caller->commitOffset(...)` takes the **next offset to consume**, not the offset just processed. To acknowledge record `N`, commit `N + 1` — passing `N` acknowledges nothing and redelivers it forever.
+- Decide per failure kind whether it blocks the ack, before writing the loop:
+
+  | Failure | Blocks the ack? |
+  | ------- | --------------- |
+  | Persistence or another required side effect | **Yes** — seek, return, do not commit |
+  | Malformed payload that can never succeed | No — log and skip, or the consumer wedges on a poison message forever |
+  | Downstream call the design tolerates failing | No — record the outcome and carry on |
+
+- Set `autoCommit: false` **only** together with the above. Manual commit without them is strictly worse than auto-commit.
+- Need the untouched payload (audit, replay, dead-letter)? Bind `value` as `string` or `byte[]` via record inclusion and persist that before parsing — binding straight to a typed record discards the original bytes, and a parse failure then loses the event entirely:
+
+  ```ballerina
+  type RawOrderRecord record {|
+      *kafka:AnydataConsumerRecord;
+      string value;
+  |};
+  ```
+
 ## GraphQL Services
 
 If the user requests a GraphQL service and has not provided their own schema:

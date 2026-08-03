@@ -20,9 +20,56 @@ kafka:ConsumerConfiguration consumerConfig = {
     topics: ["my-topic"],
     pollingInterval: 1,           // seconds between polls
     offsetReset: kafka:OFFSET_RESET_EARLIEST,  // start from the beginning for new groups
-    autoCommit: false             // manual commit is more reliable
+    autoCommit: false             // only with the commit handling below — see next section
 };
 ```
+
+### Manual commit — offsets acknowledge more than you think
+
+`autoCommit: false` alone is not safer than auto-commit; it is worse, unless the commit
+boundary is handled deliberately. Measured against a 3-record batch (offsets 0, 1, 2),
+committing after processing only the first record:
+
+| Call | Committed offset | Result |
+| ---- | ---------------- | ------ |
+| `caller->'commit()` | `3` | **entire batch acknowledged**, including the two records not yet processed |
+| `caller->commitOffset([rec.offset])` (`0`) | `0` | acknowledges **nothing** — the record is redelivered forever |
+| `caller->commitOffset([{partition, offset: rec.offset + 1}])` | `1` | exactly that one record acknowledged |
+
+`'commit()` is batch-scoped and `commitOffset()` takes the **next** offset to consume. The
+common bug is committing inside the record loop, which acknowledges records the loop
+skipped or has not reached — silent message loss that single-message testing never reveals.
+
+Shape for at-least-once delivery:
+
+```ballerina
+// Record inclusion is what puts `offset` (and the raw `value`) in scope for seek/audit.
+type OrderRecord record {|
+    *kafka:AnydataConsumerRecord;
+    string value;
+|};
+
+remote function onConsumerRecord(kafka:Caller caller, OrderRecord[] orderRecords)
+        returns error? {
+    foreach OrderRecord orderRecord in orderRecords {
+        error? persistResult = persistOrder(orderRecord);
+        if persistResult is error {
+            // Blocking failure: rewind so it is redelivered, and do NOT commit.
+            kafka:Error? seekResult = caller->seek(orderRecord.offset);
+            if seekResult is kafka:Error {
+                log:printError("rewind failed", 'error = seekResult);
+            }
+            return;
+        }
+        // Non-blocking failures (bad payload, tolerated downstream error) log and continue.
+    }
+    check caller->'commit();   // once, after the whole batch
+}
+```
+
+Symptoms of getting this wrong: messages disappear under load but never in single-message
+tests; `kafka-consumer-groups.sh --describe` shows `LAG 0` while records are still in
+flight; or a poison message pins the consumer and lag never drains.
 
 ## RabbitMQ
 
