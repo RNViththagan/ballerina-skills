@@ -24,6 +24,23 @@ kafka:ConsumerConfiguration consumerConfig = {
 };
 ```
 
+### The service contract is not in the API dump
+
+`kafka:Service` is declared as a bare marker (`distinct service object { }`) and the remote
+method is validated by a compiler plugin, so a library API dump shows an empty service body.
+That is not a tool failure and does not mean the service has no methods. The contract is:
+
+```ballerina
+service on kafkaListener {
+    remote function onConsumerRecord(kafka:Caller caller, OrderRecord[] records) returns error?;
+    // `kafka:Caller` is optional; without it you cannot commit or seek manually
+    remote function onError(kafka:Error err) returns error?;   // optional
+}
+```
+
+Kafka has **no channel string** on the service — topics are set on the listener via `topics`.
+`service on myListener` is the complete attach form.
+
 ### Manual commit — offsets acknowledge more than you think
 
 `autoCommit: false` alone is not safer than auto-commit; it is worse, unless the commit

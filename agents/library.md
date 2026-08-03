@@ -20,6 +20,15 @@ If `get_library` errors with "tool not found", the `ballerina-library` MCP serve
 
 Reading `.bala` source is a **fallback only** — for when `get_library` is unavailable (above) or returns an error. When `get_library` works, its output is authoritative and complete (clients, types, services, listeners, annotations); **do not** proactively `bal pull` or read `.bala` files to double-check or supplement it. That second pass only adds latency.
 
+**One real exception — an empty service body.** Some connectors declare their service type as a bare marker (`public type Service distinct service object { };`) and validate the remote-method contract in a compiler plugin instead. Central has no methods to report for those, so `get_library` correctly renders:
+
+```
+service kafka:Service on new kafka:Listener(...) {
+}
+```
+
+An empty `{ }` means *the contract is not in the type* — not that the service has no methods. Do not invent them and do not report the service as method-less. Read the resolved `.bala` (`listener.bal`, `service_types.bal`) or the package README for that connector's remote-method signature, and say where you got it. `ballerinax/kafka` is the common case: the method is `onConsumerRecord`, and the payload parameter is documented via the `@kafka:Payload` annotation.
+
 ## Error handling — read this carefully
 
 **`bal search` (Bash) errors** are plain CLI output:
