@@ -46,6 +46,17 @@ For langlib API quick reference: [langlib-reference.md](langlib-reference.md)
 - On run: show full output; stop any started service when done
 - On test: state what is being tested, show pass/fail count, fix failures and re-run
 
+### Integrations with external dependencies
+
+When the program needs a broker, database, or other server, a clean `bal build` proves only that it compiles, and `bal run` fails on the first connection attempt. Neither tells you the integration works. Before calling it done:
+
+1. Check whether the dependency is already reachable — `nc -z localhost 9092`.
+2. If not, and a container runtime is available, stand up a disposable instance (a short `docker-compose.yml`, DDL mounted for databases) and run against it.
+3. Exercise more than the happy path — at minimum one malformed input, and one dependency failure (stop the container mid-run) to confirm the error path does what the requirement actually says.
+4. Tear it down when finished.
+
+The failure classes that matter most in integrations are **runtime-only**: message acknowledgement, SQL parameter binding, and retry behaviour each compile perfectly while being wrong. If no container runtime is available, say plainly that the code is compile-verified but unrun, rather than implying it works.
+
 ## Ballerina Not Installed
 
 If a `bal` command fails because Ballerina is not installed, read [setup.md](setup.md) for installation instructions.
