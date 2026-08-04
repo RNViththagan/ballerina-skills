@@ -127,6 +127,18 @@ Types needed:
 
 Include only the block(s) the task needs — a `Client` for calling an API, a `Listener/Service` for receiving events. Keep the summary under 30 lines total. The caller will use this to write Ballerina code — function signatures and type shapes are what matter most.
 
+**For an event-driven library, always report the service attach path.** Where a connector binds each service to a vendor channel/topic, the service is written `service <alias>:<ServiceType> "<channel>" on <listener>` and the channel is **not part of the API surface** — it will not appear in `get_library` output at all. The caller cannot invent it, and a wrong or missing channel still compiles while the service silently receives nothing, so leaving it out is worse than useless.
+
+Get it from the package README or the resolved `.bala` constants, quote the exact literal, and say where it came from. Give the pattern too, so the caller can adapt it to another object:
+
+```
+Attach path: service salesforce:CdcService "/data/LeadChangeEvent" on <listener>
+  pattern: "/data/<SObject>ChangeEvent"   (from CDC_PREFIX in constants.bal)
+  source:  README example
+```
+
+If the connector configures its destination on the **listener** instead (Kafka `topics`, a RabbitMQ queue name), say so explicitly — `service on <listener>` is then complete and the caller should not go looking for a channel.
+
 If the library needs a required companion import to work at runtime, say so. For a **SQL database client**, tell the caller to add the matching driver as a side-effect import — `import ballerinax/<db>.driver as _;` (e.g. `postgresql.driver`, `mysql.driver`, `mssql.driver`, `oracledb.driver`, `h2.driver`) — and that it is **required and must stay even though it looks unused** (it loads the JDBC driver; without it the client fails to connect at runtime).
 
 This applies to **every** SQL connector, `ballerinax/postgresql` included. Do not carve out an exception because a connector looks like it bundles its own driver — verified on postgresql 1.19.0, omitting the import compiles fine and then fails at runtime with:
