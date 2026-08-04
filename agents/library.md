@@ -129,13 +129,15 @@ Include only the block(s) the task needs — a `Client` for calling an API, a `L
 
 **For an event-driven library, always report the service attach path.** Where a connector binds each service to a vendor channel/topic, the service is written `service <alias>:<ServiceType> "<channel>" on <listener>` and the channel is **not part of the API surface** — it will not appear in `get_library` output at all. The caller cannot invent it, and a wrong or missing channel still compiles while the service silently receives nothing, so leaving it out is worse than useless.
 
-Get it from the package README or the resolved `.bala` constants, quote the exact literal, and say where it came from. Give the pattern too, so the caller can adapt it to another object:
+Read it out of the package README or the resolved `.bala` constants for the connector in front of you — do not reproduce a channel from memory, and do not assume one connector's format applies to another. Report it in this shape:
 
 ```
-Attach path: service salesforce:CdcService "/data/LeadChangeEvent" on <listener>
-  pattern: "/data/<SObject>ChangeEvent"   (from CDC_PREFIX in constants.bal)
-  source:  README example
+Attach path: service <alias>:<ServiceType> "<channel literal you read>" on <listener>
+  pattern: <the general form, with the variable part marked>
+  source:  <README section, or the constant and file it came from>
 ```
+
+The `source` line is not decoration: it is what forces the value to be looked up rather than guessed, and it lets the caller tell a verified channel from an invented one.
 
 If the connector configures its destination on the **listener** instead (Kafka `topics`, a RabbitMQ queue name), say so explicitly — `service on <listener>` is then complete and the caller should not go looking for a channel.
 
