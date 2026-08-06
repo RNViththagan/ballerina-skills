@@ -12,7 +12,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 | A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …), or any listener that receives events — change-data-capture included | [rules/messaging.md](rules/messaging.md) |
 | A GraphQL service | [rules/graphql.md](rules/graphql.md) |
 | More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
-| Writing tests | [rules/tests.md](rules/tests.md) |
+| Writing tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
 
 ## Structure
 
@@ -21,7 +21,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- A package may contain **both** a `main` function and services. `main` runs to completion during module initialization, then the runtime starts the registered listeners — so use `main` for startup work that belongs with the service. Split them into separate packages only when they must be *invoked independently* (a service plus a mock producer or seeder you run on demand), since otherwise starting the service also runs the `main` — see [rules/workspace.md](rules/workspace.md).
+- A package may contain **both** a `main` function and services. module initialization runs, then `main` runs to completion, then the runtime starts the registered listeners — so use `main` for startup work that belongs with the service. Split them into separate packages only when they must be *invoked independently* (a service plus a mock producer or seeder you run on demand), since otherwise starting the service also runs the `main` — see [rules/workspace.md](rules/workspace.md).
 
 ## Data
 

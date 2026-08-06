@@ -30,13 +30,15 @@ kafka:ConsumerConfiguration consumerConfig = {
 method is validated by a compiler plugin, so a library API dump shows an empty service body.
 That is not a tool failure and does not mean the service has no methods. The contract is:
 
-```ballerina
+```text
 service on kafkaListener {
-    remote function onConsumerRecord(kafka:Caller caller, OrderRecord[] records) returns error?;
-    // `kafka:Caller` is optional; without it you cannot commit or seek manually
-    remote function onError(kafka:Error err) returns error?;   // optional
+    remote function onConsumerRecord(kafka:Caller caller, OrderRecord[] records) returns error?
+    remote function onError(kafka:Error err) returns error?          // optional
 }
 ```
+
+`kafka:Caller` is optional, but without it you cannot commit or seek manually. This is the
+shape, not a copyable snippet — the bodies are yours to write.
 
 Kafka has **no channel string** on the service — topics are set on the listener via `topics`.
 `service on myListener` is the complete attach form.

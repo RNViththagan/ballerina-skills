@@ -2,29 +2,41 @@
 
 Read when building anything that receives events through a listener — a broker or queue consumer (Kafka, RabbitMQ, NATS, JMS, MQTT, …) or a change-data-capture listener.
 
-The first two sections apply to any broker. The third is Kafka's concrete API — other
-connectors express the same ideas with their own calls, so ask the `library` agent for the
-acknowledgement API of the one you are using rather than assuming Kafka's.
+Attaching the service is connector-specific — read that section for the one you are using.
+The acknowledgement and raw-payload sections hold for any broker. The last section is
+Kafka's concrete API; other connectors express the same ideas with their own calls, so ask
+the `library` agent for the acknowledgement API of the one you are using rather than
+assuming Kafka's.
 
 ## Attaching the service
 
-Some event/streaming listeners (change-data-capture, certain MQ connectors) attach their service to a vendor channel/topic string between the service type and `on`:
+Connectors are split on where the destination goes, and you cannot infer it from the kind of connector — check the one in front of you (ask the `library` agent, or read its README).
+
+**Destination on the listener.** `service on myListener { ... }` is the complete attach form; there is no channel string to look for.
 
 ```ballerina
-service <pkg>:<ServiceType> "<channel>" on <listener>
+listener kafka:Listener lsn = new (bootstrapServers = url, topics = ["orders"], ...);
+service on lsn { ... }
 ```
 
-The channel is the **service's attach path** — not a listener constructor argument. Get it from the connector README/vendor docs (ask the `library` agent) before writing the service; omitting it usually compiles but the service silently receives nothing.
+Verified in this group: `ballerinax/kafka` (`topics`), `ballerina/mqtt` (`subscriptions`), `ballerinax/cdc` (`mysql:CdcListener`).
 
-Most event connectors work this way. **Kafka is the exception**: it takes `topics` on the listener config, so `service on myListener { ... }` is the complete attach form there and there is no channel string to look for.
+**Destination as the service attach path**, between the service type and `on`:
 
-Do not generalise from Kafka. RabbitMQ (queue name) and NATS (subject) both take the destination as the attach path, and omitting it does not quietly misbehave — it fails to build:
+```ballerina
+service <pkg>:<ServiceType> "<destination>" on <listener>
+```
+
+Verified in this group: `ballerinax/rabbitmq` (queue name), `ballerinax/nats` (subject), `ballerinax/salesforce` (CDC channel).
+
+Note that "change-data-capture" does not settle it — Salesforce CDC takes an attach path, `ballerinax/cdc` does not.
+
+Getting it wrong is **not** silent. Omitting a required attach path fails loudly, though not always at the same stage:
 
 ```text
-ERROR Invalid service attach point. Only string literals are allowed.
+rabbitmq, nats   ->  ERROR Invalid service attach point. Only string literals are allowed.   (build)
+salesforce       ->  error: Invalid channel name: 'null'                                     (startup)
 ```
-
-Confirm which shape the connector uses before writing the service.
 
 ## The acknowledgement boundary (any broker)
 

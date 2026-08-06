@@ -92,15 +92,32 @@ column type out of the query text where a schema change can silently invalidate 
 
 PostgreSQL folds unquoted identifiers to **lowercase**. `CREATE TABLE t (receivedAt ...)`
 creates a column literally named `receivedat`; `"receivedAt"` preserves the case. Mixing the
-two gives:
+two conventions fails in the **query**, and the quoting in the message tells you which side
+is wrong:
 
 ```text
-ERROR:  column "receivedat" does not exist
+quoted DDL + unquoted query  ->  ERROR: column "receivedat" does not exist
+unquoted DDL + quoted query  ->  ERROR: column "receivedAt" does not exist
 ```
 
-Pick one convention for the whole schema. If the DDL quotes camelCase names, every query
-must quote them too. Result-set mapping follows the **actual** column name — a mismatch
-surfaces as `sql:FieldMismatchError` or a missing-column error rather than a silent null.
+Pick one convention for the whole schema, and if the DDL quotes camelCase names then every
+query must quote them too.
+
+**Result-set mapping is a separate question, and it is more forgiving than the query.**
+Matching column names to record fields is **case-insensitive**, so a `receivedat` column
+maps into a `receivedAt` field without complaint — casing alone never breaks the mapping.
+
+What it does *not* do is complain about a field it cannot fill. A record field with no
+matching column is silently left empty rather than raising an error — verified on
+`postgresql` 1.19.0 with a closed record and a non-nilable field:
+
+```ballerina
+type MissingRec record {| int id; string tradeId; string nosuchColumn; |};
+// SELECT id, tradeid FROM m   ->  {"id":1, "tradeId":"x", "nosuchColumn":null}
+```
+
+So a typo in a record field name surfaces as a null value downstream, not as an error at
+the query. Check the record against the projection when a field is unexpectedly empty.
 
 ### Generated keys
 
