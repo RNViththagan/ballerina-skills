@@ -30,7 +30,9 @@ Walk this checklist in order:
    version is not supported by the connector
    ```
 
-   This holds for every SQL connector — no client bundles its own driver.
+   Confirmed on `postgresql` 1.19.0. Expect the same for the others: a matching `.driver`
+   package is published for `mysql`, `mssql`, `oracledb` and `h2`, which would serve no
+   purpose if the client carried its own.
 4. **Check whether the connection pool is exhausted.** See [performance.md](performance.md) for pool tuning.
 
 ### Typical client initialization
@@ -77,8 +79,10 @@ _ = check dbClient->execute(`
 `);
 ```
 
-An explicit SQL cast (`${text}::jsonb`, `CAST(${text} AS JSONB)`) also works, but the typed
-wrapper is the intended path and does not depend on getting the cast syntax right.
+An explicit SQL cast works too — `${text}::jsonb`, `CAST(${text} AS JSONB)`, and likewise
+`${text}::timestamptz` for a temporal. Those are not wrong. But binding the native type is
+the intended path: it does not depend on getting the cast syntax right, and it keeps the
+column type out of the query text where a schema change can silently invalidate it.
 
 ### Identifier casing
 
