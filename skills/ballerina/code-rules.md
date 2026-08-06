@@ -12,7 +12,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 | A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …), or any listener that receives events — change-data-capture included | [rules/messaging.md](rules/messaging.md) |
 | A GraphQL service | [rules/graphql.md](rules/graphql.md) |
 | More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
-| Tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
+| Writing tests | [rules/tests.md](rules/tests.md) |
 
 ## Structure
 
@@ -76,14 +76,12 @@ These are not optional extras; they are the rules for their domain, kept out of 
 ## Logging & Observability
 
 - Use the `ballerina/log` module for logging: `log:printInfo`, `log:printError`, `log:printWarn`, `log:printDebug`. Attach context as named key-value arguments rather than concatenating into the message string.
-- Never log secrets, auth tokens/headers, or raw request/response payloads.
 - Ballerina has built-in runtime observability (metrics + tracing) — enable it via `[ballerina.observe]` in `Config.toml`, or pass `--observability-included` to `bal run`/`bal build` (already set by `bal new`). Use `ballerina/observe` only for custom spans/metrics beyond the built-in instrumentation.
 
 ## File Organization
 
 - Split code by concern across multiple `.bal` files rather than cramming everything into `main.bal` — files in a package share one module, so splitting is free; use submodules or packages for larger separation.
 - Reuse a fitting existing file before adding a new one; name new files for their concern (`snake_case.bal`). Naming and granularity are your call, not a fixed scheme.
-- Do not create documentation markdown files.
 - **Never hand-edit `Dependencies.toml`** — it is auto-managed by the build tool. Do not create or hand-modify it to manage dependencies; deleting it to force a clean re-resolution (then rebuilding) is a valid troubleshooting step.
 - **Never edit `Ballerina.toml` to add dependencies** — add the `import` statement in the `.bal` file and run `bal build`; Ballerina resolves and downloads packages from Central automatically.
 
@@ -92,4 +90,4 @@ These are not optional extras; they are the rules for their domain, kept out of 
 - No dynamic listener registrations.
 - No code that requires assigning values to function parameters.
 - Propagate errors with `check`, or handle them with a `do`/`on fail` block; never use `checkpanic` to silence an error return in real code.
-- `//` for single-line comments only. Keep comments minimal.
+- `//` is the only comment form — Ballerina has no `/* */` block comments (`invalid token '/*'`). `#` introduces documentation.

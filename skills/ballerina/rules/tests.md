@@ -1,6 +1,6 @@
 # Test Rules
 
-Read when the user has explicitly asked for tests. Do not write tests otherwise.
+Read when writing Ballerina tests.
 
 - Use the `ballerina/test` module and any service-specific test libraries.
 - Follow the `instructions` field in `ballerina/test` library docs and the `testGenerationInstruction` field in the service library's API docs when writing tests.
