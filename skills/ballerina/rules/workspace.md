@@ -2,7 +2,15 @@
 
 Read when a repo holds more than one package — a root `Ballerina.toml` with a `[workspace]` section.
 
-A workspace is also how you keep a service and a companion `main` (mock producer, seeder, CLI) **separately runnable**. Note this is a packaging choice, not a language limit: a single package may hold both — `main` completes during module initialization and the listeners start after it. Separate packages only when you need to invoke each on its own, because in one package starting the service also runs the `main`.
+A workspace is also how you keep a service and a companion `main` (mock producer, seeder, CLI) **separately runnable**. This is a packaging choice, not a language limit: a single package may hold both — module initialization runs, then `main` runs to completion, then the listeners start.
+
+That ordering is why one package is usually the wrong home for a companion script:
+
+- Starting the service also runs the `main`.
+- Listeners do not start until `main` **returns**. A `main` that blocks — polling, sleeping, waiting on input — leaves the service unreachable for as long as it runs.
+- A `main` that returns an error aborts the program, and the listeners never start at all.
+
+Keep a `main` in the same package only when it is genuinely startup work that must finish before serving begins.
 
 ## Creating a new package
 

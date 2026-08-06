@@ -51,7 +51,7 @@ committing after processing only the first record:
 | ---- | ---------------- | ------ |
 | `caller->'commit()` | `3` | **entire batch acknowledged**, including the two records not yet processed |
 | `caller->commitOffset([rec.offset])` (`0`) | `0` | acknowledges **nothing** — the record is redelivered forever |
-| `caller->commitOffset([{partition, offset: rec.offset + 1}])` | `1` | exactly that one record acknowledged |
+| `caller->commitOffset([{partition: rec.offset.partition, offset: rec.offset.offset + 1}])` | `1` | exactly that one record acknowledged |
 
 `'commit()` is batch-scoped and `commitOffset()` takes the **next** offset to consume. The
 common bug is committing inside the record loop, which acknowledges records the loop

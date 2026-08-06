@@ -9,7 +9,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 | Task involves | Read |
 | ------------- | ---- |
 | An HTTP service, or calling an HTTP API | [rules/http.md](rules/http.md) |
-| A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …) | [rules/messaging.md](rules/messaging.md) |
+| A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …), or any listener that receives events — change-data-capture included | [rules/messaging.md](rules/messaging.md) |
 | A GraphQL service | [rules/graphql.md](rules/graphql.md) |
 | More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
 | Tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
@@ -43,7 +43,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 - Dot notation (`.`) for normal functions. Arrow notation (`->`) for remote and resource functions.
 - Resource function invocation: `clientVar->/path/["param"].get(key="value")`
 - Always use **named arguments**: `client->post("/path", message = payload)` — never positional.
-- A remote call (`->`) cannot be a sub-expression. Assign it to a variable first, then use that variable.
+- A remote call (`->`) may stand alone, be the whole right-hand side of an assignment, or be returned — `return c->get("/a");` is fine. It may **not** appear nested inside a larger expression: `io:println(check c->get("/a"))` fails with *action invocation as an expression not allowed here*. Assign it to a variable first.
 
 ## Type Safety
 

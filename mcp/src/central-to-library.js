@@ -222,8 +222,10 @@ function transformParameters(parameters, modId, orgName) {
 }
 
 function transformReturn(returnParameters, modId, orgName) {
+    // No declared return: emit no type at all. Rendering `returns nil` would be invalid
+    // Ballerina ("unknown type 'nil'"), and the agent is told to copy signatures verbatim.
     if (!returnParameters || returnParameters.length === 0) {
-        return { type: { name: "nil" } };
+        return {};
     }
     const param = returnParameters[0];
     const type = transformCentralType(param.type, modId, orgName);

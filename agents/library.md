@@ -16,7 +16,7 @@ You have two tools for this:
 
 ## If `get_library` is not available
 
-If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions), `types.bal` (records/enums/unions), and — for event-driven libraries — `service_types.bal` and `listener.bal` (service contract + listener) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
+If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions), `types.bal` (records/enums/unions), and — for event-driven libraries — `listener.bal` plus whichever file holds the service type (`types.bal`, `service_types.bal` and `service_type.bal` are all in use, so grep rather than guess). They live under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/<platform>/modules/<name>/` — glob both `<version>` and `<platform>`, which is `java21` for connectors with Java dependencies and `any` for pure-Ballerina ones. Use those signatures verbatim — never invent them.
 
 Reading `.bala` source is a **fallback only** — for when `get_library` is unavailable (above) or returns an error. When `get_library` works, its output is authoritative and complete (clients, types, services, listeners, annotations); **do not** proactively `bal pull` or read `.bala` files to double-check or supplement it. That second pass only adds latency.
 
@@ -27,7 +27,7 @@ service kafka:Service on new kafka:Listener(...) {
 }
 ```
 
-An empty `{ }` means *the contract is not in the type* — not that the service has no methods. Do not invent them and do not report the service as method-less. Read the resolved `.bala` (`listener.bal`, `service_types.bal`) or the package README for that connector's remote-method signature, and say where you got it. `ballerinax/kafka` is the common case: the method is `onConsumerRecord`, and the payload parameter is documented via the `@kafka:Payload` annotation.
+An empty `{ }` means *the contract is not in the type* — not that the service has no methods. Do not invent them and do not report the service as method-less. Read the resolved `.bala` or the package README for that connector's remote-method signature, and say where you got it. File names vary by connector — `types.bal`, `service_types.bal` and `service_type.bal` are all in use — so grep the module for the service type rather than guessing a filename. `ballerinax/kafka` is the common case: the method is `onConsumerRecord`, and the payload parameter is documented via the `@kafka:Payload` annotation.
 
 ## Error handling — read this carefully
 
@@ -86,7 +86,7 @@ For each selected library, call `get_library({ name: "<org/name>" })`.
 Critical rules:
 - The `name` argument is always `org/package` format — NEVER append a version suffix (e.g. `ballerinax/github`, NOT `ballerinax/github:5.0.0`). If you do, the tool errors.
 - If the user is working in a specific Ballerina project and you know the directory, pass `projectDir` so the tool respects the version locked in `Dependencies.toml`.
-- The returned string is the *entire* library in compact Ballerina syntax — typically 5–50 KB. You filter from it; the tool does not.
+- The returned string is the *entire* library in compact Ballerina syntax — usually tens of KB, and well over 100 KB for the largest standard-library modules. You filter from it; the tool does not. Distil aggressively: the caller needs the handful of signatures for the task, not a summary of the package.
 
 **Step 4 — Filter from the syntax string**
 

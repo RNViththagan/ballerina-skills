@@ -109,7 +109,7 @@ you need other generated columns in the same round trip, use `RETURNING` with `q
 
 ```ballerina
 int newId = check dbClient->queryRow(`
-    INSERT INTO routing_decisions (tradeId) VALUES (${tradeId}) RETURNING id
+    INSERT INTO orders (customer_id) VALUES (${customerId}) RETURNING id
 `);
 ```
 

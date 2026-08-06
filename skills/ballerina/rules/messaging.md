@@ -1,6 +1,6 @@
-# Message-Driven Service Rules
+# Event-Driven Service Rules
 
-Read when building a consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, MQTT, …).
+Read when building anything that receives events through a listener — a broker or queue consumer (Kafka, RabbitMQ, NATS, JMS, MQTT, …) or a change-data-capture listener.
 
 The first two sections apply to any broker. The third is Kafka's concrete API — other
 connectors express the same ideas with their own calls, so ask the `library` agent for the
@@ -16,11 +16,19 @@ service <pkg>:<ServiceType> "<channel>" on <listener>
 
 The channel is the **service's attach path** — not a listener constructor argument. Get it from the connector README/vendor docs (ask the `library` agent) before writing the service; omitting it usually compiles but the service silently receives nothing.
 
-This does **not** apply to connectors that configure the destination on the listener itself — Kafka (`topics`), RabbitMQ queue-per-listener, and similar. There `service on myListener { ... }` is the complete attach form, and there is no channel string to hunt for. Confirm which shape the connector uses before assuming either.
+Most event connectors work this way. **Kafka is the exception**: it takes `topics` on the listener config, so `service on myListener { ... }` is the complete attach form there and there is no channel string to look for.
+
+Do not generalise from Kafka. RabbitMQ (queue name) and NATS (subject) both take the destination as the attach path, and omitting it does not quietly misbehave — it fails to build:
+
+```text
+ERROR Invalid service attach point. Only string literals are allowed.
+```
+
+Confirm which shape the connector uses before writing the service.
 
 ## The acknowledgement boundary (any broker)
 
-A listener usually hands the remote method a **batch** of messages, not one. When the requirement is at-least-once delivery — "if X fails, do not acknowledge the message" — where you acknowledge *is* the design. Get it wrong and messages are lost only under load, never in a single-message test.
+Check first whether the remote method receives **one** message or a **batch** — the signature tells you. RabbitMQ and NATS deliver a single message; Kafka delivers an array. When the requirement is at-least-once delivery — "if X fails, do not acknowledge the message" — where you acknowledge *is* the design, and batch delivery is what makes it easy to get wrong: messages are then lost only under load, never in a single-message test.
 
 - Decide, before writing the loop, which failures block the acknowledgement:
 
