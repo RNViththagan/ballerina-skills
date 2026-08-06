@@ -107,17 +107,24 @@ query must quote them too.
 Matching column names to record fields is **case-insensitive**, so a `receivedat` column
 maps into a `receivedAt` field without complaint — casing alone never breaks the mapping.
 
-What it does *not* do is complain about a field it cannot fill. A record field with no
-matching column is silently left empty rather than raising an error — verified on
-`postgresql` 1.19.0 with a closed record and a non-nilable field:
+The two directions of mismatch behave differently, and only one of them tells you:
+
+| Mismatch | Result |
+| -------- | ------ |
+| Record field with **no matching column** | **Silent.** The field is left at its zero value — no error |
+| Column with **no matching record field** | `sql:FieldMismatchError` — *No mapping field found for SQL table column …* |
+
+Verified on `postgresql` 1.19.0 with a closed record and non-nilable fields:
 
 ```ballerina
 type MissingRec record {| int id; string tradeId; string nosuchColumn; |};
 // SELECT id, tradeid FROM m   ->  {"id":1, "tradeId":"x", "nosuchColumn":null}
 ```
 
-So a typo in a record field name surfaces as a null value downstream, not as an error at
-the query. Check the record against the projection when a field is unexpectedly empty.
+"Zero value" is type-dependent — a `string` field comes back `null`, an `int` field comes
+back `0` — so a mistyped field name can look like real data rather than a gap. Open and
+closed records behave the same way here. When a field is unexpectedly empty, check its name
+against the projection.
 
 ### Generated keys
 

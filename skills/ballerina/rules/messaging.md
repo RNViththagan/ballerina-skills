@@ -10,33 +10,45 @@ assuming Kafka's.
 
 ## Attaching the service
 
-Connectors are split on where the destination goes, and you cannot infer it from the kind of connector — check the one in front of you (ask the `library` agent, or read its README).
+Connectors put the destination in one of three places, and you cannot infer which from the kind of connector — check the one in front of you (ask the `library` agent, or read its README).
 
-**Destination on the listener.** `service on myListener { ... }` is the complete attach form; there is no channel string to look for.
+**1. On the listener config.** `service on myListener { ... }` is then the complete attach form; there is no channel string to look for.
 
-```ballerina
-listener kafka:Listener lsn = new (bootstrapServers = url, topics = ["orders"], ...);
+```text
+listener kafka:Listener lsn = new (bootstrapServers = url, topics = ["orders"]);
 service on lsn { ... }
 ```
 
-Verified in this group: `ballerinax/kafka` (`topics`), `ballerina/mqtt` (`subscriptions`), `ballerinax/cdc` (`mysql:CdcListener`).
+Verified: `ballerinax/kafka` (`topics`), `ballerina/mqtt` (`subscriptions`), `ballerinax/cdc`.
 
-**Destination as the service attach path**, between the service type and `on`:
+**2. As the service attach path**, between the service type and `on`:
 
-```ballerina
+```text
 service <pkg>:<ServiceType> "<destination>" on <listener>
 ```
 
-Verified in this group: `ballerinax/rabbitmq` (queue name), `ballerinax/nats` (subject), `ballerinax/salesforce` (CDC channel).
+Verified: `ballerinax/rabbitmq` (queue name), `ballerinax/nats` (subject), `ballerinax/salesforce` (CDC channel).
+
+**3. In a service-level annotation.**
+
+```text
+@solace:ServiceConfig { queueName: "orders" }
+service on lsn { ... }
+```
+
+Verified: `ballerinax/solace`, `ballerinax/ibm.ibmmq`, and `ballerinax/cdc` for the tables it watches (`@cdc:ServiceConfig { tables: ... }`).
 
 Note that "change-data-capture" does not settle it — Salesforce CDC takes an attach path, `ballerinax/cdc` does not.
 
-Getting it wrong is **not** silent. Omitting a required attach path fails loudly, though not always at the same stage:
+**How loudly a missing destination fails depends on the form.** Only form 2 is caught by the compiler:
 
 ```text
 rabbitmq, nats   ->  ERROR Invalid service attach point. Only string literals are allowed.   (build)
 salesforce       ->  error: Invalid channel name: 'null'                                     (startup)
+forms 1 and 3    ->  builds and runs, and the service receives nothing
 ```
+
+`kafka:ConsumerConfiguration.topics` is itself optional, so a Kafka listener with no topics compiles and subscribes to nothing. For forms 1 and 3 there is no error to wait for — confirm the destination is set before you run.
 
 ## The acknowledgement boundary (any broker)
 
