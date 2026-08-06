@@ -74,7 +74,10 @@ remote function onConsumerRecord(kafka:Caller caller, OrderRecord[] orderRecords
             // Blocking failure: rewind so it is redelivered, and do NOT commit.
             kafka:Error? seekResult = caller->seek(orderRecord.offset);
             if seekResult is kafka:Error {
+                // The rewind itself failed, so the record will not come back on the next
+                // poll. Surface it rather than returning as if the failure was handled.
                 log:printError("rewind failed", 'error = seekResult);
+                return seekResult;
             }
             return;
         }

@@ -2,7 +2,7 @@
 
 Read when a repo holds more than one package — a root `Ballerina.toml` with a `[workspace]` section.
 
-A workspace is also the answer when one requirement needs two entry points: a service **and** a companion `main` (mock producer, seeder, CLI). The constraint is one entry point per package, not one per repository.
+A workspace is also how you keep a service and a companion `main` (mock producer, seeder, CLI) **separately runnable**. Note this is a packaging choice, not a language limit: a single package may hold both — `main` completes during module initialization and the listeners start after it. Separate packages only when you need to invoke each on its own, because in one package starting the service also runs the `main`.
 
 ## Creating a new package
 

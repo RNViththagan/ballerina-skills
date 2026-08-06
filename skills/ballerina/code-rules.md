@@ -21,7 +21,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- Implement a `main` function OR a service — not both **in the same package**. When the requirement genuinely needs both, use a workspace with one package per entry point ([rules/workspace.md](rules/workspace.md)).
+- A package may contain **both** a `main` function and services. `main` runs to completion during module initialization, then the runtime starts the registered listeners — so use `main` for startup work that belongs with the service. Split them into separate packages only when they must be *invoked independently* (a service plus a mock producer or seeder you run on demand), since otherwise starting the service also runs the `main` — see [rules/workspace.md](rules/workspace.md).
 
 ## Data
 
@@ -63,7 +63,9 @@ These are not optional extras; they are the rules for their domain, kept out of 
   import ballerinax/postgresql;
   import ballerinax/postgresql.driver as _;
   ```
-  The same pattern applies to the other SQL connectors — `mysql` + `mysql.driver`, `mssql` + `mssql.driver`, `oracledb` + `oracledb.driver`, `h2` + `h2.driver`. This holds for every SQL connector: none of them bundle a driver. Without it the code compiles and fails at runtime.
+  The same pattern applies to the other vendor connectors — `mysql` + `mysql.driver`, `mssql` + `mssql.driver`, `oracledb` + `oracledb.driver`, `h2` + `h2.driver`. None of them bundle a driver, and without the import the code compiles and then fails at runtime.
+
+  The generic `ballerinax/java.jdbc` connector is the exception: there is no `java.jdbc.driver` package. Add the vendor's JDBC JAR as a platform dependency in `Ballerina.toml` instead.
 
 ## Config.toml
 

@@ -24,15 +24,19 @@ Walk this checklist in order:
    `No suitable driver found for jdbc:...` or, on recent connectors (verified on
    `postgresql` 1.19.0):
 
-   ```
+   ```text
    error: Error while loading database driver. This may be because the database driver path
    is not configured correctly in the `Ballerina.toml` file or provided database driver
    version is not supported by the connector
    ```
 
-   Confirmed on `postgresql` 1.19.0. Expect the same for the others: a matching `.driver`
-   package is published for `mysql`, `mssql`, `oracledb` and `h2`, which would serve no
-   purpose if the client carried its own.
+   Confirmed on `postgresql` 1.19.0. Expect the same for the other vendor connectors: a
+   matching `.driver` package is published for `mysql`, `mssql`, `oracledb` and `h2`, which
+   would serve no purpose if the client carried its own.
+
+   `ballerinax/java.jdbc` is different — no `java.jdbc.driver` package exists. If the client
+   is the generic JDBC one, the missing piece is a platform dependency in `Ballerina.toml`
+   (the vendor's JDBC JAR), not an import.
 4. **Check whether the connection pool is exhausted.** See [performance.md](performance.md) for pool tuning.
 
 ### Typical client initialization

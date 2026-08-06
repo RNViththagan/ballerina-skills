@@ -22,7 +22,7 @@ Reading `.bala` source is a **fallback only** — for when `get_library` is unav
 
 **One real exception — an empty service body.** Some connectors declare their service type as a bare marker (`public type Service distinct service object { };`) and validate the remote-method contract in a compiler plugin instead. Central has no methods to report for those, so `get_library` correctly renders:
 
-```
+```ballerina
 service kafka:Service on new kafka:Listener(...) {
 }
 ```
@@ -129,15 +129,17 @@ Include only the block(s) the task needs — a `Client` for calling an API, a `L
 
 If the library needs a required companion import to work at runtime, say so. For a **SQL database client**, tell the caller to add the matching driver as a side-effect import — `import ballerinax/<db>.driver as _;` (e.g. `postgresql.driver`, `mysql.driver`, `mssql.driver`, `oracledb.driver`, `h2.driver`) — and that it is **required and must stay even though it looks unused** (it loads the JDBC driver; without it the client fails to connect at runtime).
 
-This applies to **every** SQL connector, `ballerinax/postgresql` included. Do not carve out an exception because a connector looks like it bundles its own driver — verified on postgresql 1.19.0, omitting the import compiles fine and then fails at runtime with:
+This applies to every **vendor** SQL connector, `ballerinax/postgresql` included. Do not carve out an exception because a connector looks like it bundles its own driver — verified on postgresql 1.19.0, omitting the import compiles fine and then fails at runtime with:
 
-```
+```text
 error: Error while loading database driver. This may be because the database driver path
 is not configured correctly in the `Ballerina.toml` file or provided database driver
 version is not supported by the connector
 ```
 
 State the import as required. Never talk the caller out of it.
+
+The one exception is the generic `ballerinax/java.jdbc` connector: no `java.jdbc.driver` package exists. There, tell the caller to add the vendor's JDBC JAR as a platform dependency in `Ballerina.toml` instead of a side-effect import.
 
 Return **only** this format — don't append a prose walkthrough, a "Complete Example", or a "Key Notes" section (per the context-only role above).
 

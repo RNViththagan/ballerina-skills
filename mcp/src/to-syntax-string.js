@@ -237,7 +237,8 @@ function renderConstructor(func) {
     const params = func.parameters.map(renderParam).join(", ");
     const returnStr = func.return && func.return.type ? ` returns ${applyPrefixToTypeName(func.return.type.name, allExternalLinks)}` : "";
     const agentNote = buildSpecialAgentNote(allExternalLinks);
-    return `    function init(${params})${returnStr};${agentNote}`;
+    const desc = func.description ? `    # ${func.description.split("\n").join("\n    # ")}\n` : "";
+    return `${desc}    function init(${params})${returnStr};${agentNote}`;
 }
 
 function renderRemoteFunction(func, indent = "    ") {
