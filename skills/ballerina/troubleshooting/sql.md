@@ -141,7 +141,7 @@ int newId = check dbClient->queryRow(`
 
 `sql:Error` hierarchy:
 
-```
+```text
 sql:Error
 ├── sql:DatabaseError         (has errorCode and sqlState fields)
 ├── sql:NoRowsError           (queryRow() returned no row)

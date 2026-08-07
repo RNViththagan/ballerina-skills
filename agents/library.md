@@ -109,7 +109,7 @@ Critical rules — NO HALLUCINATION:
 
 Return a focused summary in this format:
 
-```
+```text
 Library: <org/name>
 Description: <one line>
 
@@ -159,7 +159,7 @@ Step 3 → `get_library({ name: "ballerinax/googleapis.gmail" })`
 Step 4 → from the returned syntax string, locate the send-related resource/remote functions and the records they reference
 Step 5 → return:
 
-```
+```text
 Library: ballerinax/googleapis.gmail
 Description: Gmail API connector for sending and managing emails
 

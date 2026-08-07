@@ -36,7 +36,7 @@ error: {ballerinax/<connector>}Error <upstream message>
 
 or as a wrapped HTTP error:
 
-```
+```text
 error: Error occurred while getting the HTTP response. status: 401, reason: Unauthorized
 ```
 
