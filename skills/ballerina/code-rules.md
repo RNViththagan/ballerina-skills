@@ -13,6 +13,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 | A database client, or SQL queries | [rules/sql.md](rules/sql.md) |
 | A GraphQL service | write the schema first if the user has not given one, then name Ballerina records after its types |
 | More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
+| The program connects to a broker, database, or other external server | [rules/integration-testing.md](rules/integration-testing.md) |
 | Writing tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
 
 ## Structure
@@ -36,7 +37,7 @@ These are not optional extras; they are the rules for their domain, kept out of 
 
 ## Identifiers
 
-- Always use **two-word camelCase** for ALL identifiers: variables, parameters, record fields (e.g., `userName`, `baseUrl`, `responseBody`).
+- Names must be descriptive. Single letters and bare abbreviations (`x`, `res`, `tmp`) are not acceptable; **two-word camelCase** is the norm for variables, parameters and record fields (e.g., `userName`, `baseUrl`, `responseBody`).
 - Exception: a record whose fields bind to external payload/JSON keys (e.g. via `cloneWithType()`) must use the **exact source key names** — even if that means single-word or PascalCase (e.g. `Name`, `CreatedDate`). The wire contract wins over the naming convention here.
 
 ## Function Calls
