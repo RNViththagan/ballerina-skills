@@ -14,7 +14,7 @@ graphql:Error
 
 **Client-side** (`graphql:ClientError`):
 
-```
+```text
 graphql:ClientError
 ├── graphql:RequestError
 │   ├── graphql:HttpError              (network failure; detail has the response body)

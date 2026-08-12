@@ -16,9 +16,18 @@ You have two tools for this:
 
 ## If `get_library` is not available
 
-If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions), `types.bal` (records/enums/unions), and — for event-driven libraries — `service_types.bal` and `listener.bal` (service contract + listener) under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/any/modules/<name>/` (glob the `<version>`). Use those signatures verbatim — never invent them.
+If `get_library` errors with "tool not found", the `ballerina-library` MCP server isn't registered. **Fall back to the `bal` CLI**: `bal pull <org/name>`, then read `client.bal` (clients + functions), `types.bal` (records/enums/unions), and — for event-driven libraries — `listener.bal` plus whichever file holds the service type (`types.bal`, `service_types.bal` and `service_type.bal` are all in use, so grep rather than guess). They live under `~/.ballerina/repositories/central.ballerina.io/bala/<org>/<name>/<version>/<platform>/modules/<name>/`. **Glob both `<version>` and `<platform>`** — the platform is `any` for pure-Ballerina packages and one of several JDK targets otherwise (`java21`, `java17` and `java11` are all in use), so never substitute a literal. Filenames vary between connectors too, so grep the module rather than assuming any of the names above. Use the signatures you find verbatim — never invent them.
 
 Reading `.bala` source is a **fallback only** — for when `get_library` is unavailable (above) or returns an error. When `get_library` works, its output is authoritative and complete (clients, types, services, listeners, annotations); **do not** proactively `bal pull` or read `.bala` files to double-check or supplement it. That second pass only adds latency.
+
+**One real exception — an empty service body.** Some connectors declare their service type as a bare marker (`public type Service distinct service object { };`) and validate the remote-method contract in a compiler plugin instead. Central has no methods to report for those, so `get_library` correctly renders:
+
+```ballerina
+service kafka:Service on new kafka:Listener(...) {
+}
+```
+
+An empty `{ }` means *the contract is not in the type* — not that the service has no methods. Do not invent them and do not report the service as method-less. Read the resolved `.bala` or the package README for that connector's remote-method signature, and say where you got it. File names vary by connector — `types.bal`, `service_types.bal` and `service_type.bal` are all in use — so grep the module for the service type rather than guessing a filename. `ballerinax/kafka` is the common case: the method is `onConsumerRecord`, and the payload parameter is documented via the `@kafka:Payload` annotation.
 
 ## Error handling — read this carefully
 
@@ -77,7 +86,7 @@ For each selected library, call `get_library({ name: "<org/name>" })`.
 Critical rules:
 - The `name` argument is always `org/package` format — NEVER append a version suffix (e.g. `ballerinax/github`, NOT `ballerinax/github:5.0.0`). If you do, the tool errors.
 - If the user is working in a specific Ballerina project and you know the directory, pass `projectDir` so the tool respects the version locked in `Dependencies.toml`.
-- The returned string is the *entire* library in compact Ballerina syntax — typically 5–50 KB. You filter from it; the tool does not.
+- The returned string is the *entire* library in compact Ballerina syntax — usually tens of KB, and well over 100 KB for the largest standard-library modules. You filter from it; the tool does not. Distil aggressively: the caller needs the handful of signatures for the task, not a summary of the package.
 
 **Step 4 — Filter from the syntax string**
 
@@ -100,7 +109,7 @@ Critical rules — NO HALLUCINATION:
 
 Return a focused summary in this format:
 
-```
+```text
 Library: <org/name>
 Description: <one line>
 
@@ -120,6 +129,18 @@ Include only the block(s) the task needs — a `Client` for calling an API, a `L
 
 If the library needs a required companion import to work at runtime, say so. For a **SQL database client**, tell the caller to add the matching driver as a side-effect import — `import ballerinax/<db>.driver as _;` (e.g. `postgresql.driver`, `mysql.driver`, `mssql.driver`, `oracledb.driver`, `h2.driver`) — and that it is **required and must stay even though it looks unused** (it loads the JDBC driver; without it the client fails to connect at runtime).
 
+This applies to every **vendor** SQL connector, `ballerinax/postgresql` included. Do not carve out an exception because a connector looks like it bundles its own driver — verified on postgresql 1.19.0, omitting the import compiles fine and then fails at runtime with:
+
+```text
+error: Error while loading database driver. This may be because the database driver path
+is not configured correctly in the `Ballerina.toml` file or provided database driver
+version is not supported by the connector
+```
+
+State the import as required. Never talk the caller out of it.
+
+The one exception is the generic `ballerinax/java.jdbc` connector: no `java.jdbc.driver` package exists. There, tell the caller to add the vendor's JDBC JAR as a platform dependency in `Ballerina.toml` instead of a side-effect import.
+
 Return **only** this format — don't append a prose walkthrough, a "Complete Example", or a "Key Notes" section (per the context-only role above).
 
 ## Ballerina library namespaces
@@ -138,7 +159,7 @@ Step 3 → `get_library({ name: "ballerinax/googleapis.gmail" })`
 Step 4 → from the returned syntax string, locate the send-related resource/remote functions and the records they reference
 Step 5 → return:
 
-```
+```text
 Library: ballerinax/googleapis.gmail
 Description: Gmail API connector for sending and managing emails
 

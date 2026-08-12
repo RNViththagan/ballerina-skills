@@ -139,14 +139,46 @@ function renderUnion(typeDef) {
 function renderConstant(typeDef) {
     const desc = renderDescription(typeDef.description);
     const dep = renderDeprecation(typeDef.isDeprecated);
-    const value = typeDef.varType.name === "string" ? `"${typeDef.value}"` : typeDef.value;
+    // Central already returns string constant values quoted — re-wrapping yields ""value"".
+    const raw = typeDef.value;
+    const quoted = typeof raw === "string" && raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"');
+    const value = typeDef.varType.name === "string" && !quoted ? `"${raw}"` : raw;
     return `${desc}${dep}const ${typeDef.varType.name} ${typeDef.name} = ${value};`;
+}
+
+function renderClassMember(func) {
+    if (func.type === "Constructor") {
+        return renderConstructor(func);
+    }
+    if (func.type === "Remote Function") {
+        return renderRemoteFunction(func);
+    }
+    if ("accessor" in func) {
+        return renderResourceFunction(func);
+    }
+    const allExternalLinks = collectFunctionExternalLinks(func.parameters, func.return && func.return.type);
+    const desc = func.description ? `    # ${func.description.split("\n").join("\n    # ")}\n` : "";
+    const params = func.parameters.map(renderParam).join(", ");
+    const returnStr = func.return && func.return.type
+        ? ` returns ${applyPrefixToTypeName(func.return.type.name, allExternalLinks)}`
+        : "";
+    const agentNote = buildSpecialAgentNote(allExternalLinks);
+    return `${desc}    function ${func.name}(${params})${returnStr};${agentNote}`;
 }
 
 function renderClass(typeDef) {
     const desc = renderDescription(typeDef.description);
     const dep = renderDeprecation(typeDef.isDeprecated);
-    return `${desc}${dep}class ${typeDef.name} {\n}`;
+    const functions = typeDef.functions || [];
+    if (functions.length === 0) {
+        return `${desc}${dep}class ${typeDef.name} {\n}`;
+    }
+    const lines = [`${desc}${dep}class ${typeDef.name} {`];
+    for (const func of functions) {
+        lines.push(renderClassMember(func));
+    }
+    lines.push("}");
+    return lines.join("\n");
 }
 
 function renderError(typeDef) {
@@ -205,7 +237,8 @@ function renderConstructor(func) {
     const params = func.parameters.map(renderParam).join(", ");
     const returnStr = func.return && func.return.type ? ` returns ${applyPrefixToTypeName(func.return.type.name, allExternalLinks)}` : "";
     const agentNote = buildSpecialAgentNote(allExternalLinks);
-    return `    function init(${params})${returnStr};${agentNote}`;
+    const desc = func.description ? `    # ${func.description.split("\n").join("\n    # ")}\n` : "";
+    return `${desc}    function init(${params})${returnStr};${agentNote}`;
 }
 
 function renderRemoteFunction(func, indent = "    ") {

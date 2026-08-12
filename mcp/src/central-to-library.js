@@ -222,8 +222,10 @@ function transformParameters(parameters, modId, orgName) {
 }
 
 function transformReturn(returnParameters, modId, orgName) {
+    // No declared return: emit no type at all. Rendering `returns nil` would be invalid
+    // Ballerina ("unknown type 'nil'"), and the agent is told to copy signatures verbatim.
     if (!returnParameters || returnParameters.length === 0) {
-        return { type: { name: "nil" } };
+        return {};
     }
     const param = returnParameters[0];
     const type = transformCentralType(param.type, modId, orgName);
@@ -279,6 +281,21 @@ function transformMethod(method, modId, orgName) {
     }
 
     return { name: method.name, type: "Normal Function", description, parameters, return: ret };
+}
+
+// Classes and object types carry their constructor separately from the method list.
+// Without `init` the caller cannot construct the type at all — which matters most for
+// the SQL typed-value wrappers (postgresql:JsonBinaryValue and friends).
+function buildClassFunctions(cls, modId, orgName) {
+    const source = [];
+    if (cls.initMethod) {
+        source.push(cls.initMethod);
+    }
+    for (const m of cls.methods || []) {
+        if (cls.initMethod && m.name === "init") continue;
+        source.push(m);
+    }
+    return source.map((m) => transformMethod(m, modId, orgName));
 }
 
 // ---------------------------------------------------------------------------
@@ -461,11 +478,21 @@ function centralDocsToLibrary(centralApiResponse) {
     }
 
     for (const cls of mod.classes || []) {
-        typeDefs.push({ type: "Class", name: cls.name, description: "", functions: [] });
+        typeDefs.push({
+            type: "Class",
+            name: cls.name,
+            description: (cls.description || "").trim(),
+            functions: buildClassFunctions(cls, modId, orgName),
+        });
     }
 
     for (const obj of mod.objectTypes || []) {
-        typeDefs.push({ type: "Class", name: obj.name, description: "", functions: [] });
+        typeDefs.push({
+            type: "Class",
+            name: obj.name,
+            description: (obj.description || "").trim(),
+            functions: buildClassFunctions(obj, modId, orgName),
+        });
     }
 
     for (const u of mod.unionTypes || []) {

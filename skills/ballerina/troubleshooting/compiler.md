@@ -6,7 +6,7 @@ Compilation problems appear before the program starts and are deterministic — 
 
 `bal build` prints diagnostics in this form:
 
-```
+```text
 ERROR [<file>.bal:(<startLine>:<startCol>,<endLine>:<endCol>)] <message>
 ```
 
@@ -33,7 +33,7 @@ Process them in order:
 
 The crash banner looks like this:
 
-```
+```text
 ballerina: Oh no, something really went wrong. Bad. Sad.
 
 We appreciate it if you can report the code that broke Ballerina in
@@ -59,7 +59,7 @@ Always capture a minimal reproducible example and the full stack trace before fi
 
 Compiler plugins ship with most standard libraries and emit their own diagnostics. They look identical to core compiler errors but are usually more domain-specific:
 
-```
+```text
 ERROR [service.bal:(5:1,5:1)] remote methods are not allowed in HTTP service
 ```
 
@@ -79,14 +79,14 @@ The fix is in your code — the diagnostic message tells you what the plugin rej
 
 Compilation may also fail with a raw Java exception rather than a Ballerina diagnostic. Common forms:
 
-```
+```text
 error: compilation failed
 java.lang.ClassCastException: class org.wso2.ballerinalang.compiler.tree.BLangFunction
     cannot be cast to class org.wso2.ballerinalang.compiler.tree.BLangService
     at io.ballerina.stdlib.http.compiler.HttpServiceValidator.validate(...)
 ```
 
-```
+```text
 error: compilation failed
 java.lang.NoClassDefFoundError: io/ballerina/stdlib/http/compiler/Constants
     at io.ballerina.stdlib.http.compiler.HttpServiceContractResourceValidator.<init>(...)

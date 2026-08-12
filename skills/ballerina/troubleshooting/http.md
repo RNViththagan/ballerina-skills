@@ -48,7 +48,7 @@ path = "access.log"   # optional; logs to console only if omitted
 
 Sample output:
 
-```
+```text
 192.168.1.10 - - [15/Mar/2024:10:30:01 +0000] "GET /api/users HTTP/1.1" 200 1234
 10.0.0.5     - - [15/Mar/2024:10:30:05 +0000] "GET /api/users/999 HTTP/1.1" 404 89
 ```
@@ -59,7 +59,7 @@ Use access logs for production traffic patterns (error-rate spikes, slow endpoin
 
 Outbound HTTP calls produce errors under `http:ClientError`:
 
-```
+```text
 http:ClientError
 ├── http:ApplicationResponseError       (any 4xx or 5xx response)
 │   ├── http:ClientRequestError         (4xx)
@@ -126,7 +126,7 @@ if result is http:ClientRequestError {
 
 When Ballerina is the server, errors live under `http:ListenerError`:
 
-```
+```text
 http:ListenerError
 ├── http:GenericListenerError
 ├── http:InterceptorReturnError

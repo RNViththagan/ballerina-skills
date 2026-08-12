@@ -6,6 +6,7 @@ Use this file as a router. **Read only the topic file matching the symptom — d
 
 | Symptom                                                                  | Read                                       |
 | ------------------------------------------------------------------------ | ------------------------------------------ |
+| `bal: command not found` — Ballerina not installed or not on PATH        | [../setup.md](../setup.md)                 |
 | `bal build` reports `ERROR [file.bal:(line,col)] ...`                    | [compiler.md](compiler.md)                 |
 | `bal build` prints `Oh no, something really went wrong` + JVM stack      | [compiler.md](compiler.md) §Crashes        |
 | Runtime panic — `error: {ballerina}...` + stack trace during `bal run`   | [runtime.md](runtime.md)                   |

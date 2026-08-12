@@ -1,5 +1,21 @@
 # Ballerina Code Rules
 
+Everything in this file applies to **all** Ballerina code. Read it in full.
+
+## Domain rules — read the ones your task needs
+
+These are not optional extras; they are the rules for their domain, kept out of this file so you only load what applies. Read the matching file **before** writing that part of the code.
+
+| Task involves | Read |
+| ------------- | ---- |
+| An HTTP service, or calling an HTTP API | [rules/http.md](rules/http.md) |
+| A consumer for a broker or queue (Kafka, RabbitMQ, NATS, JMS, …), or any listener that receives events — change-data-capture included | [rules/messaging.md](rules/messaging.md) |
+| A database client, or SQL queries | [rules/sql.md](rules/sql.md) |
+| A GraphQL service | write the schema first if the user has not given one, then name Ballerina records after its types |
+| More than one package in the repo, or a service **plus** a `main` | [rules/workspace.md](rules/workspace.md) |
+| The program connects to a broker, database, or other external server | [rules/integration-testing.md](rules/integration-testing.md) |
+| Writing tests — only when the user asked for them | [rules/tests.md](rules/tests.md) |
+
 ## Structure
 
 - Define `configurable` variables for all external values (API keys, hosts, ports, credentials).
@@ -7,8 +23,7 @@
   - Never assign hardcoded default values to configurables.
 - Initialize clients at module level, before any function or service declarations.
 - Declare listeners with the `listener` keyword (`listener foo:Listener lsn = new (config);`), not a `final` variable — `service ... on lsn` attachment requires it; a `final foo:Listener` fails to compile.
-- An event/streaming listener (change-data-capture, message topic/queue, etc.) attaches its service to a vendor channel/topic string that sits **between the service type and `on`**: `service <pkg>:<ServiceType> "<channel>" on <listener>` — e.g. a Salesforce CDC service binds to a channel like `service salesforce:CdcService "/data/LeadChangeEvent" on lsn`. The channel goes on the **`service` declaration** (its attach path) — **not** as a listener constructor argument; the listener `new (...)` takes only its config. This string isn't in the library API — get it from the connector README/vendor docs (ask the `library` agent) and wire it in **before** writing the service. Without it the code usually still compiles but the service silently receives nothing — never ship an event service without its channel.
-- Implement a `main` function OR a service — not both, unless the requirement explicitly needs both.
+- A package may contain **both** a `main` function and services, and the startup ordering has consequences — see [rules/workspace.md](rules/workspace.md).
 
 ## Data
 
@@ -18,11 +33,11 @@
 - If a return typedesc is marked `<>` in API docs, define a custom record for the expected data shape.
 - If a parameter type is `record {|anydata...;|}`, define or reuse an explicit named record — do not pass an anonymous literal.
 - If a return type is `record {|anydata...;|}`, decide the shape, declare a named record, and assign to it.
-- When accessing a field of a record, assign it to a new typed variable first, then use that variable in the next statement.
+- Do not invoke a method on a field-access expression, and do not narrow an optional or union-typed field in place — assign the field to a typed variable first, then use that variable. Plain reads (`if order.status == "NEW"`) need no intermediate.
 
 ## Identifiers
 
-- Always use **two-word camelCase** for ALL identifiers: variables, parameters, record fields (e.g., `userName`, `baseUrl`, `responseBody`).
+- Names must be descriptive. Single letters and bare abbreviations (`x`, `res`, `tmp`) are not acceptable; **two-word camelCase** is the norm for variables, parameters and record fields (e.g., `userName`, `baseUrl`, `responseBody`).
 - Exception: a record whose fields bind to external payload/JSON keys (e.g. via `cloneWithType()`) must use the **exact source key names** — even if that means single-word or PascalCase (e.g. `Name`, `CreatedDate`). The wire contract wins over the naming convention here.
 
 ## Function Calls
@@ -30,6 +45,7 @@
 - Dot notation (`.`) for normal functions. Arrow notation (`->`) for remote and resource functions.
 - Resource function invocation: `clientVar->/path/["param"].get(key="value")`
 - Always use **named arguments**: `client->post("/path", message = payload)` — never positional.
+- A remote call (`->`) may stand alone, be the whole right-hand side of an assignment, or be returned — `return c->get("/a");` is fine. It may **not** appear nested inside a larger expression: `io:println(check c->get("/a"))` fails with *action invocation as an expression not allowed here*. Assign it to a variable first.
 
 ## Type Safety
 
@@ -40,89 +56,32 @@
 ## Imports
 
 - Each `.bal` file must have its own import statements.
-- Import only packages your code actually references — `bal build` errors on unused imports. Don't pre-import a connector's dependency module (e.g. `ballerina/sql` behind a database client) unless your code names a type from it.
+- Import only packages your code actually references — `bal build` errors on unused imports. Don't pre-import a connector's dependency module (e.g. `ballerina/sql` behind a database client) unless your code names a type from it. Exception: the SQL `.driver` packages (below) are deliberate side-effect-only imports — keep them even though they look unused.
 - Do not import auto-imported langlibs: `lang.string`, `lang.boolean`, `lang.float`, `lang.decimal`, `lang.int`, `lang.map`.
 - Packages with dots in names use aliases: `import org/package.one as one;`
 - Submodules in `generated/<moduleName>/`: import as `import <packageName>.<moduleName>;` — the import should contain only the package name and submodule name, no path components.
-- For SQL databases, import the matching `.driver` package alongside the client so the JDBC driver is on the runtime classpath (also required for GraalVM native builds):
-  ```ballerina
-  import ballerinax/postgresql;
-  import ballerinax/postgresql.driver as _;
-  ```
-  The same pattern applies to the other SQL connectors — `mysql` + `mysql.driver`, `mssql` + `mssql.driver`, `oracledb` + `oracledb.driver`, `h2` + `h2.driver`.
-
-## HTTP Service Design
-
-When creating an HTTP service, define resource function signatures first with full return types:
-
-```ballerina
-resource function get users() returns UserList|http:NotFound|http:NotImplemented {
-    return http:NOT_IMPLEMENTED;
-}
-```
-
-Use `http:NotImplemented` as a placeholder return type initially, then implement each resource function.
-
-## GraphQL Services
-
-If the user requests a GraphQL service and has not provided their own schema:
-- Write the proposed GraphQL schema first (before generating Ballerina code).
-- Use the same names from the GraphQL schema when defining Ballerina record types.
-
-## Workspace Projects
-
-When working with a Ballerina workspace (root `Ballerina.toml` with a `[workspace]` section):
-
-**Creating a new package:**
-1. Create the package directory with a `Ballerina.toml` containing the `[package]` section (`name`, `org`, `version`).
-2. Add the new package path to the `packages` array in the root workspace `Ballerina.toml`.
-3. Create initial `.bal` files in the new package.
-
-**Guidelines:**
-- Always prefer modifying existing packages over creating new ones.
-- The root workspace `Ballerina.toml` should only contain a `[workspace]` section.
-- Do not modify existing package `Ballerina.toml` files for dependency management.
+- A SQL client needs its `.driver` package imported alongside it as a side-effect import — see [rules/sql.md](rules/sql.md).
+- **Never hand-add a dependency to `Ballerina.toml`** — an `import` plus `bal build` resolves and downloads it from Central. `[[dependency]]` blocks are only for pinning a version or pointing at a local repository, and `[[platform.*.dependency]]` for Java JARs; see [troubleshooting/packages.md](troubleshooting/packages.md).
+- **Never hand-edit `Dependencies.toml`** — the build tool manages it. Deleting it to force a clean re-resolution, then rebuilding, is a valid troubleshooting step.
 
 ## Config.toml
 
-- Never read `Config.toml` or `tests/Config.toml` directly — they may contain secrets.
-- Providing values to configurables is a runtime task. Only do it before running or testing.
-- If the user needs to supply values, list the configurable variable names in the summary.
+- `Config.toml` supplies `configurable` values at **run time**, not build time — a missing value fails the run, never the build.
+- Only create or populate it as part of running or testing, not while writing the code.
 
 ## Logging & Observability
 
-- Use the `ballerina/log` module for logging: `log:printInfo`, `log:printError`, `log:printWarn`, `log:printDebug`. Attach context as structured key-value pairs (named arguments) rather than concatenating into the message — e.g. `log:printError("order failed", id = orderId)`.
-- Never log secrets, auth tokens/headers, or raw request/response payloads — redact or hash sensitive values before logging.
-- Prefer Ballerina's built-in runtime observability (metrics + distributed tracing) over hand-rolled instrumentation. It needs no code changes — enable it via `Config.toml`, or pass `--observability-included` to `bal run`/`bal build` (already set in the `Ballerina.toml` generated by `bal new`):
-  ```toml
-  [ballerina.observe]
-  enabled = true
-  provider = "<provider>"   # or set metricsEnabled/metricsReporter and tracingEnabled/tracingProvider separately
-  ```
-  Metrics (e.g. Prometheus) and traces (e.g. Jaeger) are then emitted automatically for services and clients.
-- Only add custom spans/metrics via the `ballerina/observe` module when the built-in instrumentation isn't enough.
+- Use the `ballerina/log` module for logging: `log:printInfo`, `log:printError`, `log:printWarn`, `log:printDebug`. Attach context as named key-value arguments rather than concatenating into the message string.
+- Ballerina has built-in runtime observability (metrics + tracing) — enable it via `[ballerina.observe]` in `Config.toml`, or pass `--observability-included` to `bal run`/`bal build` (already set by `bal new`). Use `ballerina/observe` only for custom spans/metrics beyond the built-in instrumentation.
 
 ## File Organization
 
 - Split code by concern across multiple `.bal` files rather than cramming everything into `main.bal` — files in a package share one module, so splitting is free; use submodules or packages for larger separation.
-- Reuse a fitting existing file before adding a new one; name new files for their concern (`snake_case.bal`). Naming and granularity are your call, not a fixed scheme.
-- Do not create documentation markdown files.
-- **Never hand-edit `Dependencies.toml`** — it is auto-managed by the build tool. Do not create or hand-modify it to manage dependencies; deleting it to force a clean re-resolution (then rebuilding) is a valid troubleshooting step.
-- **Never edit `Ballerina.toml` to add dependencies** — add the `import` statement in the `.bal` file and run `bal build`; Ballerina resolves and downloads packages from Central automatically.
-
-## Tests
-
-- Only write tests if the user explicitly asks.
-- Use the `ballerina/test` module and any service-specific test libraries.
-- Follow the `instructions` field in `ballerina/test` library docs and the `testGenerationInstruction` field in the service library's API docs when writing tests.
-- Test an HTTP service through an `http:Client` against the running service — assert its public contract, not internals.
-- Override `configurable` values for tests in `tests/Config.toml` (not the package's `Config.toml`).
-- To mock a client or connector, wrap its construction in a small init function so `@test:Mock` can replace it.
-- Use `dependsOn` only when test ordering is the behavior under test — not to sequence otherwise-independent tests.
+- Name new files for their concern (`snake_case.bal`). Naming and granularity are your call, not a fixed scheme.
 
 ## Other Rules
 
-- No dynamic listener registrations.
-- No code that requires assigning values to function parameters.
+- Function parameters are immutable — assigning to one fails with *cannot assign a value to function argument*. Copy it into a local variable and modify that.
+- Declare listeners and attach services statically at module level; do not register or attach them at runtime.
 - Propagate errors with `check`, or handle them with a `do`/`on fail` block; never use `checkpanic` to silence an error return in real code.
-- `//` for single-line comments only. Keep comments minimal.
+- `//` is the only comment form — Ballerina has no `/* */` block comments (`invalid token '/*'`). `#` introduces documentation.

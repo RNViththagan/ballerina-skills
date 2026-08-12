@@ -18,7 +18,7 @@ Ballerina splits failures into two categories, and they are read differently.
 
 The standard format is:
 
-```
+```text
 error: <message>
     at <org>/<package>:<version>:<function>(<file>.bal:<line>)
     ...
@@ -26,7 +26,7 @@ error: <message>
 
 A real example:
 
-```
+```text
 error: {ballerina/http}ClientRequestError Connection refused: localhost/127.0.0.1:8080
        └── origin ──┘ └── type ────────┘ └────── message ─────────────────────────┘
 ```
@@ -62,7 +62,7 @@ These have the `{ballerina}` prefix and originate from the runtime itself.
 
 ### Worked example — `TypeCastError`
 
-```
+```text
 error: {ballerina}TypeCastError {"message":"incompatible types: 'string' cannot be cast to 'int'"}
         at myorg/mypackage:0.1.0:processData(utils.bal:42)
         at myorg/mypackage:0.1.0:main(main.bal:10)
@@ -109,7 +109,7 @@ The dump goes to the program's **standard output**. If you want to capture it, r
 
 A dump entry looks like this:
 
-```
+```text
 Timestamp: 2024-03-15T10:30:00.000Z
 Total strand groups: 4, active: 2
 
