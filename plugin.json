@@ -10,5 +10,6 @@
   "repository": "https://github.com/ballerina-platform/skills",
   "license": "Apache-2.0",
   "keywords": ["ballerina", "lsp", "integration", "wso2", "cloud-native"],
-  "agents": "./.github/plugin/agents/"
+  "agents": "./.github/plugin/agents/",
+  "lspServers": "./lsp-config/servers.json"
 }
