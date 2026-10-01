@@ -1,0 +1,24 @@
+name: Copilot config sync
+
+on:
+  pull_request:
+    paths:
+      - ".claude-plugin/**"
+      - ".github/plugin/**"
+      - "plugin.json"
+      - ".lsp.json"
+      - "lsp-config/**"
+      - "agents/**"
+      - "scripts/check-copilot-sync.sh"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-copilot-sync.sh

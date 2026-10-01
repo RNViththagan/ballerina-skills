@@ -20,15 +20,28 @@ Register the marketplace and install the plugin:
 
 Restart the session to activate the language server, the `ballerina` skill, the `library` discovery agent, and the activation hooks. The MCP server ships pre-built; no `npm install` step is required.
 
+### GitHub Copilot
+
+In GitHub Copilot CLI, register the marketplace and install the plugin:
+
+```bash
+copilot plugin marketplace add ballerina-platform/skills
+copilot plugin install ballerina@ballerina-skills
+```
+
+In VS Code, add `ballerina-platform/skills` to the `chat.plugins.marketplaces` setting, then search `@agentPlugins ballerina` in the Extensions view and install it.
+
+This installs the language server (Copilot CLI), the `ballerina` skill, the library-discovery MCP server, the `library` agent, and the activation hooks.
+
 ### Other agents (Open Agent Skills CLI)
 
-Install the skill for Codex, Cursor, Gemini CLI, GitHub Copilot, and other agents:
+Install the skill for Codex, Cursor, Gemini CLI, and other agents:
 
 ```bash
 npx skills add ballerina-platform/skills
 ```
 
-Pass `--agent <name>` to target a specific agent. This channel installs the `ballerina` skill only; the language server, the library-discovery MCP server, and the activation hooks are Claude Code plugin features. On these agents, library discovery uses the `bal search` command.
+Pass `--agent <name>` to target a specific agent. This channel installs the `ballerina` skill only; the language server, the library-discovery MCP server, and the activation hooks come with the Claude Code and GitHub Copilot plugins. On these agents, library discovery uses the `bal search` command.
 
 ## Skills
 
